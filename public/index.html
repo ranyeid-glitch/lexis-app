@@ -530,7 +530,6 @@ Top recommendation: One sentence.`,
       body: JSON.stringify({
         _fileType: fileExt,
         _fileData: sendFileData ? fileB64 : undefined,
-        _mode: mode,
         model: 'claude-sonnet-4-20250514',
         max_tokens: 2000,
         system: ['summary','dates','clauses','definitions','compliance','obligations'].includes(mode)
