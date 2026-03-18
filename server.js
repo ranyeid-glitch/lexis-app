@@ -7,13 +7,10 @@ const url = require('url');
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.ANTHROPIC_API_KEY || '';
 
-const MIME_TYPES = {
-  '.html': 'text/html',
-  '.css': 'text/css',
-  '.js': 'application/javascript',
-  '.json': 'application/json',
-  '.png': 'image/png',
-  '.ico': 'image/x-icon'
+const MIME = {
+  '.html': 'text/html', '.css': 'text/css',
+  '.js': 'application/javascript', '.json': 'application/json',
+  '.png': 'image/png', '.ico': 'image/x-icon'
 };
 
 function serveFile(res, filePath, contentType) {
@@ -40,14 +37,14 @@ function handleProxy(req, res) {
       }
     };
     const apiReq = https.request(options, apiRes => {
-      let responseData = '';
-      apiRes.on('data', chunk => { responseData += chunk; });
+      let data = '';
+      apiRes.on('data', chunk => { data += chunk; });
       apiRes.on('end', () => {
         res.writeHead(apiRes.statusCode, {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'
         });
-        res.end(responseData);
+        res.end(data);
       });
     });
     apiReq.on('error', err => {
@@ -70,8 +67,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  const parsedUrl = url.parse(req.url);
-  const pathname = parsedUrl.pathname;
+  const pathname = url.parse(req.url).pathname;
 
   if (pathname === '/api/analyze' && req.method === 'POST') {
     handleProxy(req, res);
@@ -81,11 +77,10 @@ const server = http.createServer((req, res) => {
   let filePath = pathname === '/' ? '/index.html' : pathname;
   filePath = path.join(__dirname, 'public', filePath);
   const ext = path.extname(filePath);
-  const contentType = MIME_TYPES[ext] || 'text/plain';
-  serveFile(res, filePath, contentType);
+  serveFile(res, filePath, MIME[ext] || 'text/plain');
 });
 
 server.listen(PORT, () => {
-  console.log(`Lexis Intelligence running on port ${PORT}`);
+  console.log(`Lexis Intelligence v2 running on port ${PORT}`);
   if (!API_KEY) console.warn('WARNING: ANTHROPIC_API_KEY not set.');
 });
