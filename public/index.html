@@ -220,10 +220,10 @@
            ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)">
         <div class="dIcon" id="dIcon">📄</div>
         <div class="dMain" id="dMain">Click to upload</div>
-        <div class="dSub" id="dSub">PDF, TXT, MD, or CSV</div>
+        <div class="dSub" id="dSub">PDF, Word, Excel, PowerPoint, TXT</div>
         <div class="dName" id="dName"></div>
       </div>
-      <input type="file" id="fi" accept=".pdf,.txt,.md,.csv" onchange="handleFile(this.files[0])">
+      <input type="file" id="fi" accept=".pdf,.txt,.md,.csv,.doc,.docx,.xlsx,.xls,.pptx" onchange="handleFile(this.files[0])">
     </div>
 
     <div>
@@ -313,7 +313,7 @@
 
 <script>
   // ── STATE ──
-  let fileB64 = null, fileMime = 'text/plain', fileName = '', mode = 'summary';
+  let fileB64 = null, fileMime = 'text/plain', fileExt = '', fileName = '', mode = 'summary';
   let currentLang = 'en';
   let lastAnalysisText = '';
   let chatHistory = [];
@@ -524,7 +524,8 @@ Remedies specified for breach.`,
   function handleFile(file) {
     if (!file) return;
     fileName = file.name;
-    fileMime = (file.type === 'application/pdf' || file.name.endsWith('.pdf')) ? 'application/pdf' : 'text/plain';
+    fileExt = file.name.split('.').pop().toLowerCase();
+    fileMime = (file.type === 'application/pdf' || fileExt === 'pdf') ? 'application/pdf' : 'text/plain';
     const r = new FileReader();
     r.onload = e => {
       fileB64 = e.target.result.split(',')[1];
@@ -731,6 +732,8 @@ Remedies specified for breach.`,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          _fileType: fileExt,
+          _fileData: (includeDoc && fileB64 && !['pdf','txt','md','csv'].includes(fileExt)) ? fileB64 : undefined,
           model: 'claude-sonnet-4-20250514',
           max_tokens: 1000,
           system: 'You are Lexis, an expert legal document analyst. You are answering follow-up questions about a legal document that has already been analyzed. Be concise, precise, and use markdown formatting.',
