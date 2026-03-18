@@ -323,184 +323,194 @@
 
   // ── PROMPTS ──
   const PROMPTS = {
-    summary: `You are a senior legal analyst. Analyze this legal document and provide a comprehensive structured summary.
+    summary: `Summarize this legal document in plain language for a non-lawyer business executive.
 
-Use markdown formatting with headers. Cover:
+Use this exact structure:
 
 ## Document Type
 What kind of document is this?
 
-## Parties Involved
-Who are the parties and what are their roles?
+## Parties
+| Party | Role | Jurisdiction |
+|-------|------|-------------|
+| Name | Role | Country |
 
 ## Core Purpose
-What does this document do?
+In 2-3 sentences, what does this document do?
 
-## Key Terms & Conditions
-List the 6 most important terms. Use bullet points.
+## Key Commercial Terms
+| Term | Detail |
+|------|--------|
+| Duration | |
+| Payment | |
+| Key rates/prices | |
+| Insurance | |
+| Governing law | |
 
-## Obligations
-What must each party do? Use a table or bullet points per party.
+## Main Obligations
+For each party, bullet points of what they must do.
 
-## Overall Verdict
-Is this document **standard**, **favorable**, or **concerning**? Why? Use bold for the verdict word.`,
+## Verdict
+Is this document **Standard**, **Favorable to one party**, or **Requires negotiation**? One paragraph explanation.`,
 
-    risks: `You are a legal risk analyst. Identify every risk and red flag in this document.
+    risks: `Identify every risk and red flag in this legal document.
 
-CRITICAL INSTRUCTION: You MUST use EXACTLY this format for EVERY single risk. No exceptions. No emojis. No different headers. No numbered lists. Only use ### [HIGH], ### [MEDIUM], or ### [LOW] as the header for each risk.
+YOU MUST USE EXACTLY THIS FORMAT FOR EVERY RISK — NO EXCEPTIONS:
 
-### [HIGH] Risk Title Here
-**Clause:** Section X.X
+### [HIGH] Risk title here
+**Clause:** Section reference
 **Explanation:** Plain language explanation of the risk.
-**Why it matters:** Why this is dangerous.
-**Ask a lawyer:** What question to raise with legal counsel.
+**Why it matters:** Why this is dangerous to the reader.
+**Ask a lawyer:** One specific question to raise with legal counsel.
 
 ---
 
-### [MEDIUM] Risk Title Here
-**Clause:** Section X.X
+### [MEDIUM] Risk title here
+**Clause:** Section reference
 **Explanation:** Plain language explanation.
 **Why it matters:** Why this matters.
-**Ask a lawyer:** Question for legal counsel.
+**Ask a lawyer:** Specific question.
 
 ---
 
-### [LOW] Risk Title Here
-**Clause:** Section X.X
+### [LOW] Risk title here
+**Clause:** Section reference
 **Explanation:** Plain language explanation.
 **Why it matters:** Why this matters.
-**Ask a lawyer:** Question for legal counsel.
+**Ask a lawyer:** Specific question.
 
 ---
 
-Order all risks from most to least severe. Every single risk must start with ### [HIGH], ### [MEDIUM], or ### [LOW] — nothing else is acceptable.
+Order from most severe to least. Every risk MUST start with ### [HIGH], ### [MEDIUM], or ### [LOW].
 
 End with:
-
 ## Risk Summary
 Overall risk level: **HIGH** or **MEDIUM** or **LOW**
-High risks found: X
-Medium risks found: X
-Low risks found: X
-Top recommendation: One clear sentence.`,
+High risks: X | Medium risks: X | Low risks: X
+Top recommendation: One sentence.`,
 
-    dates: `You are a legal deadline specialist. Extract every date, deadline, and timeframe from this document.
+    dates: `Extract every date, deadline, and time obligation from this document.
 
-## Key Dates & Deadlines
+## All Dates and Deadlines
 
-For each date or deadline found, use this format:
+Create a table of every date or timeframe found:
 
-#### Date or Timeframe
-**Priority:** Critical / Important / Advisory
-**Action required:** What must happen
-**Responsible party:** Which party must act
-**Consequence if missed:** What happens if deadline is not met
-
----
+| Date / Timeframe | What Must Happen | Who Is Responsible | Consequence if Missed |
+|-----------------|-----------------|-------------------|----------------------|
+| | | | |
 
 ## Missing Dates
-Any dates or timeframes that would normally be present in this type of document but are absent.
+List any dates that are blank, TBD, or missing but should be present.
 
-## The 3 Most Critical Deadlines
-List the top 3 deadlines in order of importance and explain why each is critical.`,
+## Top 3 Critical Deadlines
+List the 3 most important deadlines and explain why each is critical to the agreement.`,
 
-    clauses: `You are a contract law expert. Analyze this document clause by clause using markdown.
+    clauses: `Analyze this document clause by clause.
 
-For each major clause use this format:
+For each major clause, use this exact format:
 
-### Clause Name
+## [Clause Name]
 **Classification:** Standard / Favorable / Unfavorable / Unusual
-**Explanation:** Plain language explanation.
-**Concerns:** Any red flags or issues.
-**Industry standard:** Is this typical?
+**Plain language:** What does this clause actually mean in simple terms?
+**Concerns:** Any red flags, unusual terms, or issues to flag.
+**Industry standard:** Is this typical for this type of agreement?
 
 ---
+
+Cover every substantive clause. End with:
 
 ## Clause Scorecard
 | Classification | Count |
-|---|---|
-| Standard | X |
-| Favorable | X |
-| Unfavorable | X |
-| Unusual | X |`,
+|---------------|-------|
+| Standard | |
+| Favorable | |
+| Unfavorable | |
+| Unusual | |`,
 
-    definitions: `You are a legal language specialist. Analyze language and definitions using markdown.
+    definitions: `Analyze the defined terms and language in this document.
 
 ## Defined Terms
-| Term | Definition | Concerns |
-|---|---|---|
-| Term 1 | Definition | Any issue |
+List every term that is explicitly defined or capitalized:
+
+| Term | Definition in Document | Any Concerns |
+|------|----------------------|-------------|
+| | | |
 
 ## Undefined but Important Terms
-Terms used but not defined that should be.
+Terms used repeatedly that are never defined.
 
 ## Ambiguous Language
-### Ambiguous Phrase
-**Found in:** Clause X
-**Possible interpretations:** 
-- Interpretation 1
-- Interpretation 2
-**Risk created:** ...
+For each ambiguous phrase:
 
-## Cross-References & Dependencies
-How clauses reference each other.
+#### "[Exact phrase]"
+**Found in:** Clause reference
+**Interpretation 1:** First possible meaning
+**Interpretation 2:** Second possible meaning
+**Risk:** What dispute could arise from this ambiguity
+
+## Cross-References
+How do the clauses reference and depend on each other? Any conflicts?
 
 ## Inconsistencies
-Terms used differently in different places.
+Terms used differently in different parts of the document.`,
 
-## Recommendations
-What should be added, clarified, or amended.`,
+    compliance: `Review this document for regulatory and legal compliance.
 
-    compliance: `You are a regulatory compliance expert. Review using markdown.
+## Applicable Laws
+List every law, regulation, or standard this document references or triggers:
 
-## Applicable Laws & Regulations
-What laws govern this document?
+| Law / Regulation | Jurisdiction | How it Applies |
+|-----------------|-------------|---------------|
+| | | |
 
 ## Compliance Gaps
-| Missing Provision | Severity | Recommendation |
-|---|---|---|
-| Gap 1 | High/Med/Low | What to add |
+What required provisions are missing?
 
-## Regulatory Red Flags
-Any provisions that may conflict with regulations.
+| Missing Provision | Why It Is Required | Recommendation |
+|------------------|--------------------|---------------|
+| | | |
+
+## Provisions That May Conflict with Law
+Any clauses that appear to violate or conflict with applicable regulations.
 
 ## Jurisdiction Analysis
-Governing law clause — is it appropriate?
+Is the governing law and jurisdiction clause appropriate? Any cross-border issues?
 
 ## Data Privacy
-Any GDPR, data handling, or consent issues.
+Any data protection, GDPR, or personal data handling issues.
 
 ## Recommendations
-Prioritized list of required changes.`,
+Prioritized list of compliance changes needed before signing.`,
 
-    obligations: `You are a legal obligations analyst. Map all rights, obligations and restrictions using markdown.
+    obligations: `Map every obligation, right, and restriction for each party in this document.
 
-For each party identified:
+For each party identified, provide:
 
-## Party Name
+## [Party Name]
 
-### Obligations (Must Do)
-| Obligation | Due By | Consequence if Breached |
-|---|---|---|
-| ... | ... | ... |
+### Must Do (Obligations)
+| Obligation | By When | Consequence if Breached |
+|-----------|---------|------------------------|
+| | | |
 
-### Rights (Entitled To)
+### Entitled To (Rights)
 - Right 1 — conditions — duration
 - Right 2 — conditions — duration
 
-### Restrictions (Cannot Do)
-- Restriction 1 — scope — duration
+### Cannot Do (Restrictions)
+- Restriction 1 — scope — how long
+- Restriction 2 — scope — how long
 
 ---
 
 ## Mutual Obligations
-Things both parties must do.
+Things both parties must do together.
 
 ## Imbalances
-Anything one-sided or disproportionate — **flag these clearly**.
+Flag any obligations that are one-sided or disproportionate. Be specific.
 
 ## Enforcement
-Remedies specified for breach.`,
+What remedies and consequences are specified for breach?`,
 
     custom: null
   };
