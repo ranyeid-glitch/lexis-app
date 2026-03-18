@@ -251,7 +251,7 @@
 
     <div>
       <div class="sLabel">Full Report</div>
-      <button class="fullBtn" id="fullBtn" onclick="runFullAnalysis()">⚡ Run All 8 Analyses</button>
+      <button class="fullBtn" id="fullBtn" onclick="runFullAnalysis()">⚡ Run All 7 Analyses</button>
     </div>
 
     <div class="disclaimer">
@@ -598,29 +598,23 @@ Remedies specified for breach.`,
         _fileData: sendFileData ? fileB64 : undefined,
         model: 'claude-sonnet-4-20250514',
         max_tokens: 2000,
-        system: `You are Lexis, an expert legal document analyst.
+        system: `You are Lexis, an expert legal document analyst with 20+ years of experience across contracts, NDAs, employment law, real estate, compliance, regulations, and judicial decisions. Always use markdown formatting with clear headers and structure. Be thorough and precise.
 
-CRITICAL OUTPUT RULE: When analyzing risks, you MUST format EVERY single risk EXACTLY like this — no exceptions:
+CRITICAL RULE FOR RISK ANALYSIS ONLY: When the user asks you to identify risks or red flags, format EVERY risk EXACTLY like this:
 
 ### [HIGH] Title of risk
 **Clause:** reference
-**Explanation:** what it means
-**Why it matters:** impact
-**Ask a lawyer:** question
+**Explanation:** plain language explanation
+**Why it matters:** impact on reader
+**Ask a lawyer:** specific question
 
 ### [MEDIUM] Title of risk
-**Clause:** reference  
-**Explanation:** what it means
-**Why it matters:** impact
-**Ask a lawyer:** question
+...
 
 ### [LOW] Title of risk
-**Clause:** reference
-**Explanation:** what it means
-**Why it matters:** impact
-**Ask a lawyer:** question
+...
 
-NEVER use emojis, NEVER use numbered lists for risks, NEVER use "HIGH PRIORITY ISSUES" as a section. ONLY use ### [HIGH], ### [MEDIUM], ### [LOW] as headers for individual risks.`,
+For ALL OTHER analysis types (summaries, dates, clauses, compliance, obligations, definitions) use clear markdown with headers, bullet points, and tables as appropriate. Do NOT use the [HIGH]/[MEDIUM]/[LOW] format for non-risk analyses.`,
         messages: chatHistory.length > 0 && !includeDoc ? chatHistory : [{ role: 'user', content }]
       })
     });
@@ -683,7 +677,7 @@ NEVER use emojis, NEVER use numbered lists for risks, NEVER use "HIGH PRIORITY I
   async function runFullAnalysis() {
     if (!fileB64) { alert('Please upload a document first.'); return; }
 
-    const modes = ['summary', 'risks', 'dates', 'clauses', 'compliance', 'obligations'];
+    const modes = ['summary', 'risks', 'dates', 'clauses', 'definitions', 'compliance', 'obligations'];
     const btn = document.getElementById('fullBtn');
     btn.disabled = true;
     setStatus('FULL REPORT');
