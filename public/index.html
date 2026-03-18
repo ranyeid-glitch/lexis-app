@@ -631,7 +631,7 @@ Top recommendation: One sentence.`,
         _fileType: fileExt,
         _fileData: sendFileData ? fileB64 : undefined,
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 2000,
+        max_tokens: 4000,
         system: 'You are Lexis, an expert legal document analyst with 20+ years of experience across contracts, NDAs, employment law, real estate, compliance, regulations, and judicial decisions. Follow the exact format and structure specified in each request. Do not add sections that were not requested.',
         messages: chatHistory.length > 0 && !includeDoc ? chatHistory : [{ role: 'user', content }]
       })
@@ -667,7 +667,9 @@ Top recommendation: One sentence.`,
         // TWO-CALL APPROACH: Call 1 extracts, Call 2 formats
         const result1 = await callAPI(prompt);
         const template = FORMAT_TEMPLATES[mode];
-        const formatPrompt = template + '\n\n' + result1.text;
+        // Trim Call 1 output to avoid token overflow in Call 2 (max 6000 chars)
+        const trimmed = result1.text.length > 6000 ? result1.text.substring(0, 6000) + '\n[truncated]' : result1.text;
+        const formatPrompt = template + '\n\n' + trimmed;
         const result2 = await callAPI(formatPrompt, false);
         text = result2.text;
         tokens = result1.tokens + result2.tokens;
