@@ -323,41 +323,16 @@
 
   // ── PROMPTS ──
   const PROMPTS = {
-    summary: `Summarize this legal document in plain language for a non-lawyer business executive.
+    summary: `Analyze this legal document and respond with ONLY a JSON object. No text before or after. No markdown. No explanations. Only the JSON.
 
-STRICT INSTRUCTION: This is a SUMMARY ONLY. Do NOT include any risk analysis, red flags, recommendations, compliance issues, or risk ratings. Do NOT use HIGH/MEDIUM/LOW labels. Do NOT add sections that were not requested below. ONLY provide the sections listed here — nothing else.
-
-## Document Type
-What kind of document is this?
-
-## Parties
-| Party | Role | Jurisdiction |
-|-------|------|-------------|
-| Fill in | Fill in | Fill in |
-
-## Core Purpose
-In 2-3 sentences only, what does this document do?
-
-## Key Commercial Terms
-| Term | Detail |
-|------|--------|
-| Duration | |
-| Payment terms | |
-| Key rates or prices | |
-| Insurance required | |
-| Governing law | |
-
-## Main Obligations
-**[First party name]:**
-- Obligation 1
-- Obligation 2
-
-**[Second party name]:**
-- Obligation 1
-- Obligation 2
-
-## Verdict
-One paragraph only: Is this document Standard, Favorable to one party, or Does it require negotiation? Why?`,
+{
+  "document_type": "string",
+  "parties": [{"name": "string", "role": "string", "jurisdiction": "string"}],
+  "core_purpose": "string (2-3 sentences)",
+  "commercial_terms": [{"term": "string", "detail": "string"}],
+  "obligations": [{"party": "string", "items": ["string"]}],
+  "verdict": {"rating": "Standard|Favorable to Client|Favorable to Provider|Requires negotiation", "explanation": "string"}
+}`,
 
     risks: `Identify every risk and red flag in this legal document.
 
@@ -395,138 +370,73 @@ Overall risk level: **HIGH** or **MEDIUM** or **LOW**
 High risks: X | Medium risks: X | Low risks: X
 Top recommendation: One sentence.`,
 
-    dates: `Extract every date, deadline, and time obligation from this document.
+    dates: `Extract every date and deadline from this document. Respond with ONLY a JSON object. No text before or after. No markdown. No explanations. Only the JSON.
 
-STRICT INSTRUCTION: This is a DATES AND DEADLINES extraction ONLY. Do NOT include risk analysis, recommendations, or risk ratings. Do NOT use HIGH/MEDIUM/LOW labels. ONLY provide the sections listed below.
+{
+  "deadlines": [
+    {
+      "date_or_period": "string",
+      "action_required": "string",
+      "responsible_party": "string",
+      "consequence_if_missed": "string",
+      "priority": "Critical|Important|Advisory"
+    }
+  ],
+  "missing_dates": ["string"],
+  "top_3_critical": [{"deadline": "string", "why_critical": "string"}]
+}`,
 
-## All Dates and Deadlines
+    clauses: `Analyze every major clause in this document. Respond with ONLY a JSON object. No text before or after. No markdown. No explanations. Only the JSON.
 
-Create a table of every date or timeframe found:
+{
+  "clauses": [
+    {
+      "name": "string",
+      "classification": "Standard|Favorable|Unfavorable|Unusual",
+      "plain_language": "string",
+      "concerns": "string or null",
+      "industry_standard": "string"
+    }
+  ],
+  "scorecard": {"standard": 0, "favorable": 0, "unfavorable": 0, "unusual": 0}
+}`,
 
-| Date / Timeframe | What Must Happen | Who Is Responsible | Consequence if Missed |
-|-----------------|-----------------|-------------------|----------------------|
-| | | | |
+    definitions: `Analyze all defined terms and language in this document. Respond with ONLY a JSON object. No text before or after. No markdown. No explanations. Only the JSON.
 
-## Missing Dates
-List any dates that are blank, TBD, or missing but should be present.
+{
+  "defined_terms": [{"term": "string", "definition": "string", "concerns": "string or null"}],
+  "undefined_important": ["string"],
+  "ambiguous_phrases": [{"phrase": "string", "found_in": "string", "interpretation_1": "string", "interpretation_2": "string", "risk": "string"}],
+  "inconsistencies": ["string"],
+  "recommendations": ["string"]
+}`,
 
-## Top 3 Critical Deadlines
-List the 3 most important deadlines and explain why each is critical to the agreement.`,
+    compliance: `Review this document for regulatory compliance. Respond with ONLY a JSON object. No text before or after. No markdown. No explanations. Only the JSON.
 
-    clauses: `Analyze this document clause by clause.
+{
+  "applicable_laws": [{"law": "string", "jurisdiction": "string", "how_it_applies": "string"}],
+  "compliance_gaps": [{"missing_provision": "string", "severity": "High|Medium|Low", "recommendation": "string"}],
+  "red_flags": ["string"],
+  "jurisdiction_analysis": "string",
+  "data_privacy_issues": ["string"],
+  "recommendations": ["string"]
+}`,
 
-STRICT INSTRUCTION: This is a CLAUSE ANALYSIS ONLY. Do NOT add a separate risk section, recommendations section, or overall risk rating at the end. Do NOT use HIGH/MEDIUM/LOW severity labels. ONLY classify each clause as Standard, Favorable, Unfavorable, or Unusual.
+    obligations: `Map all obligations, rights and restrictions for each party. Respond with ONLY a JSON object. No text before or after. No markdown. No explanations. Only the JSON.
 
-For each major clause, use this exact format:
-
-## [Clause Name]
-**Classification:** Standard / Favorable / Unfavorable / Unusual
-**Plain language:** What does this clause actually mean in simple terms?
-**Concerns:** Any red flags, unusual terms, or issues to flag.
-**Industry standard:** Is this typical for this type of agreement?
-
----
-
-Cover every substantive clause. End with:
-
-## Clause Scorecard
-| Classification | Count |
-|---------------|-------|
-| Standard | |
-| Favorable | |
-| Unfavorable | |
-| Unusual | |`,
-
-    definitions: `Analyze the defined terms and language in this document.
-
-STRICT INSTRUCTION: This is a DEFINITIONS AND LANGUAGE analysis ONLY. Do NOT include risk ratings, recommendations sections, or HIGH/MEDIUM/LOW labels. ONLY provide the sections listed below.
-
-## Defined Terms
-List every term that is explicitly defined or capitalized:
-
-| Term | Definition in Document | Any Concerns |
-|------|----------------------|-------------|
-| | | |
-
-## Undefined but Important Terms
-Terms used repeatedly that are never defined.
-
-## Ambiguous Language
-For each ambiguous phrase:
-
-#### "[Exact phrase]"
-**Found in:** Clause reference
-**Interpretation 1:** First possible meaning
-**Interpretation 2:** Second possible meaning
-**Risk:** What dispute could arise from this ambiguity
-
-## Cross-References
-How do the clauses reference and depend on each other? Any conflicts?
-
-## Inconsistencies
-Terms used differently in different parts of the document.`,
-
-    compliance: `Review this document for regulatory and legal compliance.
-
-STRICT INSTRUCTION: This is a COMPLIANCE REVIEW ONLY. Do NOT include HIGH/MEDIUM/LOW risk cards or general risk analysis. Use tables and bullet points. ONLY provide the sections listed below.
-
-## Applicable Laws
-List every law, regulation, or standard this document references or triggers:
-
-| Law / Regulation | Jurisdiction | How it Applies |
-|-----------------|-------------|---------------|
-| | | |
-
-## Compliance Gaps
-What required provisions are missing?
-
-| Missing Provision | Why It Is Required | Recommendation |
-|------------------|--------------------|---------------|
-| | | |
-
-## Provisions That May Conflict with Law
-Any clauses that appear to violate or conflict with applicable regulations.
-
-## Jurisdiction Analysis
-Is the governing law and jurisdiction clause appropriate? Any cross-border issues?
-
-## Data Privacy
-Any data protection, GDPR, or personal data handling issues.
-
-## Recommendations
-Prioritized list of compliance changes needed before signing.`,
-
-    obligations: `Map every obligation, right, and restriction for each party in this document.
-
-STRICT INSTRUCTION: This is an OBLIGATIONS MAP ONLY. Do NOT include risk analysis sections or HIGH/MEDIUM/LOW risk ratings. Use tables and bullet points. ONLY provide the sections listed below.
-
-For each party identified, provide:
-
-## [Party Name]
-
-### Must Do (Obligations)
-| Obligation | By When | Consequence if Breached |
-|-----------|---------|------------------------|
-| | | |
-
-### Entitled To (Rights)
-- Right 1 — conditions — duration
-- Right 2 — conditions — duration
-
-### Cannot Do (Restrictions)
-- Restriction 1 — scope — how long
-- Restriction 2 — scope — how long
-
----
-
-## Mutual Obligations
-Things both parties must do together.
-
-## Imbalances
-Flag any obligations that are one-sided or disproportionate. Be specific.
-
-## Enforcement
-What remedies and consequences are specified for breach?`,
+{
+  "parties": [
+    {
+      "name": "string",
+      "obligations": [{"obligation": "string", "due_by": "string", "consequence": "string"}],
+      "rights": [{"right": "string", "conditions": "string"}],
+      "restrictions": [{"restriction": "string", "scope": "string", "duration": "string"}]
+    }
+  ],
+  "mutual_obligations": ["string"],
+  "imbalances": ["string"],
+  "enforcement": "string"
+}`,
 
     custom: null
   };
@@ -735,7 +645,17 @@ What remedies and consequences are specified for breach?`,
         reportHTML += `
           <div class="fullSection">
             <div class="fullSectionTitle"><span class="fullSectionIcon">${MODE_ICONS[m]}</span>${LABELS[m]}</div>
-            <div class="mdBody ${currentLang === 'ar' ? 'rtl' : ''}">${renderMarkdown(results[m])}</div>
+            ${(function() {
+              const jsonModes = ['summary','dates','clauses','definitions','compliance','obligations'];
+              if (jsonModes.includes(m)) {
+                const parsed = parseJSON(results[m]);
+                if (parsed) {
+                  const jhtml = renderJSON(parsed, m);
+                  if (jhtml) return jhtml;
+                }
+              }
+              return '<div class="mdBody ' + (currentLang === 'ar' ? 'rtl' : '') + '">' + renderMarkdown(results[m]) + '</div>';
+            })()}
           </div>`;
       }
     });
@@ -873,11 +793,161 @@ What remedies and consequences are specified for breach?`,
     return { highCount, medCount, lowCount, overall: level };
   }
 
+  // Parse JSON response safely
+  function parseJSON(text) {
+    try {
+      const clean = text.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+      return JSON.parse(clean);
+    } catch(e) { return null; }
+  }
+
+  // Render JSON data as beautiful HTML based on mode
+  function renderJSON(data, m) {
+    if (m === 'summary') {
+      const vc = {'Standard':'var(--green)','Favorable to Client':'var(--blue)','Favorable to Provider':'var(--amber)','Requires negotiation':'var(--red)'};
+      const vcolor = vc[data.verdict?.rating] || 'var(--muted)';
+      return `
+        <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+          <tr><td style="padding:8px;background:var(--parchment);font-weight:500;width:160px;border:1px solid var(--border)">Document Type</td><td style="padding:8px;border:1px solid var(--border)">${esc(data.document_type||'')}</td></tr>
+          <tr><td style="padding:8px;background:var(--parchment);font-weight:500;border:1px solid var(--border)">Core Purpose</td><td style="padding:8px;border:1px solid var(--border)">${esc(data.core_purpose||'')}</td></tr>
+        </table>
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px">Parties</h3>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+          <tr style="background:var(--ink);color:#fff"><th style="padding:8px;text-align:left">Party</th><th style="padding:8px;text-align:left">Role</th><th style="padding:8px;text-align:left">Jurisdiction</th></tr>
+          ${(data.parties||[]).map(p=>`<tr><td style="padding:8px;border:1px solid var(--border)">${esc(p.name)}</td><td style="padding:8px;border:1px solid var(--border)">${esc(p.role)}</td><td style="padding:8px;border:1px solid var(--border)">${esc(p.jurisdiction)}</td></tr>`).join('')}
+        </table>
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px">Key Commercial Terms</h3>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+          ${(data.commercial_terms||[]).map(t=>`<tr><td style="padding:8px;background:var(--parchment);font-weight:500;width:200px;border:1px solid var(--border)">${esc(t.term)}</td><td style="padding:8px;border:1px solid var(--border)">${esc(t.detail)}</td></tr>`).join('')}
+        </table>
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px">Main Obligations</h3>
+        ${(data.obligations||[]).map(o=>`<div style="margin-bottom:14px"><strong>${esc(o.party)}</strong><ul style="margin:6px 0 0 20px">${(o.items||[]).map(i=>`<li style="margin-bottom:4px">${esc(i)}</li>`).join('')}</ul></div>`).join('')}
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px">Verdict</h3>
+        <div style="border-left:4px solid ${vcolor};padding:12px 16px;background:var(--parchment)">
+          <strong style="color:${vcolor}">${esc(data.verdict?.rating||'')}</strong><br><br>${esc(data.verdict?.explanation||'')}
+        </div>`;
+    }
+    if (m === 'dates') {
+      const pc = {'Critical':'var(--red)','Important':'var(--amber)','Advisory':'var(--green)'};
+      return `
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:0 0 12px">All Dates & Deadlines</h3>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+          <tr style="background:var(--ink);color:#fff">
+            <th style="padding:8px;text-align:left">Date / Period</th>
+            <th style="padding:8px;text-align:left">Action Required</th>
+            <th style="padding:8px;text-align:left">Who</th>
+            <th style="padding:8px;text-align:left">If Missed</th>
+            <th style="padding:8px;text-align:left">Priority</th>
+          </tr>
+          ${(data.deadlines||[]).map(d=>`<tr>
+            <td style="padding:8px;border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:12px">${esc(d.date_or_period)}</td>
+            <td style="padding:8px;border:1px solid var(--border)">${esc(d.action_required)}</td>
+            <td style="padding:8px;border:1px solid var(--border)">${esc(d.responsible_party)}</td>
+            <td style="padding:8px;border:1px solid var(--border);font-size:13px;color:var(--muted)">${esc(d.consequence_if_missed)}</td>
+            <td style="padding:8px;border:1px solid var(--border)"><span style="color:${pc[d.priority]||'var(--muted)'};font-weight:500;font-size:12px">${esc(d.priority)}</span></td>
+          </tr>`).join('')}
+        </table>
+        ${(data.missing_dates||[]).length ? `<h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px">Missing Dates</h3><ul style="margin-left:20px">${data.missing_dates.map(d=>`<li style="margin-bottom:6px">${esc(d)}</li>`).join('')}</ul>` : ''}
+        ${(data.top_3_critical||[]).length ? `<h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px">Top 3 Critical Deadlines</h3>${data.top_3_critical.map(d=>`<div style="border-left:3px solid var(--red);padding:10px 14px;margin-bottom:10px;background:var(--red-bg)"><strong>${esc(d.deadline)}</strong><br><span style="font-size:13px;color:var(--muted)">${esc(d.why_critical)}</span></div>`).join('')}` : ''}`;
+    }
+    if (m === 'clauses') {
+      const cls = {'Standard':'var(--green)','Favorable':'var(--blue)','Unfavorable':'var(--red)','Unusual':'var(--amber)'};
+      const sc = data.scorecard||{};
+      return `
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px">
+          ${Object.entries(sc).map(([k,v])=>`<div style="text-align:center;padding:12px;border:1px solid var(--border);background:var(--parchment)"><div style="font-size:24px;font-weight:500;color:${cls[k.charAt(0).toUpperCase()+k.slice(1)]||'var(--ink)'}">${v}</div><div style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;margin-top:4px">${k}</div></div>`).join('')}
+        </div>
+        ${(data.clauses||[]).map(c=>`
+          <div style="margin-bottom:12px;border:1px solid var(--border);padding:14px 16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <strong style="font-size:15px">${esc(c.name)}</strong>
+              <span style="font-size:11px;padding:3px 10px;background:${cls[c.classification]||'var(--muted)'};color:#fff;font-family:'IBM Plex Mono',monospace">${esc(c.classification)}</span>
+            </div>
+            <p style="font-size:14px;margin-bottom:6px">${esc(c.plain_language)}</p>
+            ${c.concerns ? `<p style="font-size:13px;color:var(--red);margin-bottom:4px">⚠ ${esc(c.concerns)}</p>` : ''}
+            <p style="font-size:12px;color:var(--muted)">${esc(c.industry_standard)}</p>
+          </div>`).join('')}`;
+    }
+    if (m === 'definitions') {
+      return `
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:0 0 12px">Defined Terms</h3>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+          <tr style="background:var(--ink);color:#fff"><th style="padding:8px;text-align:left">Term</th><th style="padding:8px;text-align:left">Definition</th><th style="padding:8px;text-align:left">Concerns</th></tr>
+          ${(data.defined_terms||[]).map(t=>`<tr><td style="padding:8px;border:1px solid var(--border);font-weight:500;white-space:nowrap">${esc(t.term)}</td><td style="padding:8px;border:1px solid var(--border);font-size:13px">${esc(t.definition)}</td><td style="padding:8px;border:1px solid var(--border);font-size:13px;color:${t.concerns&&t.concerns!=='null'?'var(--red)':'var(--muted)'}">${esc(t.concerns&&t.concerns!=='null'?t.concerns:'—')}</td></tr>`).join('')}
+        </table>
+        ${(data.undefined_important||[]).length ? `<h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px">Undefined but Important Terms</h3><ul style="margin-left:20px">${data.undefined_important.map(t=>`<li style="margin-bottom:6px">${esc(t)}</li>`).join('')}</ul>` : ''}
+        ${(data.ambiguous_phrases||[]).length ? `<h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px">Ambiguous Language</h3>${data.ambiguous_phrases.map(p=>`<div style="border-left:3px solid var(--amber);padding:10px 14px;margin-bottom:10px;background:var(--amber-bg)"><strong>"${esc(p.phrase)}"</strong> <span style="font-size:12px;color:var(--muted)">(${esc(p.found_in)})</span><br><span style="font-size:13px">1: ${esc(p.interpretation_1)}</span><br><span style="font-size:13px">2: ${esc(p.interpretation_2)}</span><br><span style="font-size:13px;color:var(--red)">Risk: ${esc(p.risk)}</span></div>`).join('')}` : ''}
+        ${(data.inconsistencies||[]).length ? `<h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px">Inconsistencies</h3><ul style="margin-left:20px">${data.inconsistencies.map(i=>`<li style="margin-bottom:6px">${esc(i)}</li>`).join('')}</ul>` : ''}
+        ${(data.recommendations||[]).length ? `<h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px">Recommendations</h3><ul style="margin-left:20px">${data.recommendations.map(r=>`<li style="margin-bottom:6px">${esc(r)}</li>`).join('')}</ul>` : ''}`;
+    }
+    if (m === 'compliance') {
+      const sc = {'High':'var(--red)','Medium':'var(--amber)','Low':'var(--green)'};
+      return `
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:0 0 12px">Applicable Laws & Regulations</h3>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+          <tr style="background:var(--ink);color:#fff"><th style="padding:8px;text-align:left">Law</th><th style="padding:8px;text-align:left">Jurisdiction</th><th style="padding:8px;text-align:left">How It Applies</th></tr>
+          ${(data.applicable_laws||[]).map(l=>`<tr><td style="padding:8px;border:1px solid var(--border);font-weight:500">${esc(l.law)}</td><td style="padding:8px;border:1px solid var(--border)">${esc(l.jurisdiction)}</td><td style="padding:8px;border:1px solid var(--border);font-size:13px">${esc(l.how_it_applies)}</td></tr>`).join('')}
+        </table>
+        ${(data.compliance_gaps||[]).length ? `<h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px">Compliance Gaps</h3><table style="width:100%;border-collapse:collapse;margin-bottom:24px"><tr style="background:var(--ink);color:#fff"><th style="padding:8px;text-align:left">Missing Provision</th><th style="padding:8px;text-align:left">Severity</th><th style="padding:8px;text-align:left">Recommendation</th></tr>${data.compliance_gaps.map(g=>`<tr><td style="padding:8px;border:1px solid var(--border)">${esc(g.missing_provision)}</td><td style="padding:8px;border:1px solid var(--border)"><span style="color:${sc[g.severity]||'var(--muted)'};font-weight:500">${esc(g.severity)}</span></td><td style="padding:8px;border:1px solid var(--border);font-size:13px">${esc(g.recommendation)}</td></tr>`).join('')}</table>` : ''}
+        ${(data.red_flags||[]).length ? `<h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px">Regulatory Red Flags</h3><ul style="margin-left:20px">${data.red_flags.map(f=>`<li style="margin-bottom:6px;color:var(--red)">${esc(f)}</li>`).join('')}</ul>` : ''}
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px">Jurisdiction Analysis</h3>
+        <p style="font-size:14px;line-height:1.7">${esc(data.jurisdiction_analysis||'')}</p>
+        ${(data.data_privacy_issues||[]).length ? `<h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px">Data Privacy Issues</h3><ul style="margin-left:20px">${data.data_privacy_issues.map(i=>`<li style="margin-bottom:6px">${esc(i)}</li>`).join('')}</ul>` : ''}
+        ${(data.recommendations||[]).length ? `<h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px">Recommendations</h3><ul style="margin-left:20px">${data.recommendations.map(r=>`<li style="margin-bottom:6px">${esc(r)}</li>`).join('')}</ul>` : ''}`;
+    }
+    if (m === 'obligations') {
+      return `
+        ${(data.parties||[]).map(p=>`
+          <h3 style="font-family:'Playfair Display',serif;font-size:18px;margin:20px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--gold)">${esc(p.name)}</h3>
+          <h4 style="font-size:13px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin:14px 0 8px">Obligations</h4>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
+            <tr style="background:var(--ink);color:#fff"><th style="padding:8px;text-align:left">Must Do</th><th style="padding:8px;text-align:left">By When</th><th style="padding:8px;text-align:left">If Breached</th></tr>
+            ${(p.obligations||[]).map(o=>`<tr><td style="padding:8px;border:1px solid var(--border)">${esc(o.obligation)}</td><td style="padding:8px;border:1px solid var(--border);font-size:13px;white-space:nowrap">${esc(o.due_by)}</td><td style="padding:8px;border:1px solid var(--border);font-size:13px;color:var(--muted)">${esc(o.consequence)}</td></tr>`).join('')}
+          </table>
+          ${(p.rights||[]).length ? `<h4 style="font-size:13px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin:14px 0 8px">Rights</h4><ul style="margin-left:20px;margin-bottom:16px">${p.rights.map(r=>`<li style="margin-bottom:6px"><strong>${esc(r.right)}</strong> — ${esc(r.conditions)}</li>`).join('')}</ul>` : ''}
+          ${(p.restrictions||[]).length ? `<h4 style="font-size:13px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin:14px 0 8px">Restrictions</h4><ul style="margin-left:20px;margin-bottom:16px">${p.restrictions.map(r=>`<li style="margin-bottom:6px">${esc(r.restriction)} — <em>${esc(r.scope)}</em> — ${esc(r.duration)}</li>`).join('')}</ul>` : ''}
+        `).join('<hr style="margin:24px 0;border:none;border-top:1px solid var(--border)">')}
+        ${(data.mutual_obligations||[]).length ? `<h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px">Mutual Obligations</h3><ul style="margin-left:20px">${data.mutual_obligations.map(o=>`<li style="margin-bottom:6px">${esc(o)}</li>`).join('')}</ul>` : ''}
+        ${(data.imbalances||[]).length ? `<h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px;color:var(--red)">Imbalances</h3><ul style="margin-left:20px">${data.imbalances.map(i=>`<li style="margin-bottom:6px;color:var(--red)">${esc(i)}</li>`).join('')}</ul>` : ''}
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px">Enforcement</h3>
+        <p style="font-size:14px;line-height:1.7">${esc(data.enforcement||'')}</p>`;
+    }
+    return null;
+  }
+
   function renderAnalysis(panelId, title, text, elapsed, tokens) {
     const panel = document.getElementById(panelId);
     const isRisk = mode === 'risks';
     const isAr = currentLang === 'ar';
+    const jsonModes = ['summary','dates','clauses','definitions','compliance','obligations'];
 
+    // Try JSON rendering for non-risk modes
+    if (jsonModes.includes(mode)) {
+      const data = parseJSON(text);
+      if (data) {
+        const jsonHTML = renderJSON(data, mode);
+        if (jsonHTML) {
+          panel.innerHTML = `
+            <div class="resultHdr">
+              <div>
+                <div class="resultTitle">${title}</div>
+                <div class="resultFile">${escHtml(fileName)}</div>
+              </div>
+              <div>
+                <div class="resultMeta">${elapsed}s · ${tokens.toLocaleString()} tokens</div>
+                <div class="resultActions">
+                  <button class="actBtn gold" onclick="exportSinglePDF()">⬇ PDF</button>
+                  <button class="actBtn" onclick="copyText()">Copy</button>
+                </div>
+              </div>
+            </div>
+            ${jsonHTML}`;
+          return;
+        }
+      }
+    }
+
+    // Risk mode or JSON parse failed — use markdown
     let riskHTML = '';
     if (isRisk) {
       const { highCount, medCount, lowCount, overall } = extractRiskScore(text);
