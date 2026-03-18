@@ -370,20 +370,29 @@ Overall risk level: **HIGH** or **MEDIUM** or **LOW**
 High risks: X | Medium risks: X | Low risks: X
 Top recommendation: One sentence.`,
 
-    dates: `You are extracting dates and deadlines from a legal document. Return ONLY this JSON structure with no other text:
+    dates: `Extract every deadline, date, timeframe and notice period from this legal document.
 
-{"deadlines":[{"date_or_period":"string","action_required":"string","responsible_party":"string","consequence_if_missed":"string","priority":"Critical|Important|Advisory"}],"missing_dates":["string"],"top_3_critical":[{"deadline":"string","why_critical":"string"}]}
+Return ONLY a JSON array. Nothing else. Start with [ and end with ]. Each item must have exactly these fields:
 
-Find every date, deadline, timeframe, and notice period in the document. Examples of what to include:
-- Contract term end date
-- Payment deadlines  
-- Notice periods (30 days, 90 days etc)
-- Renewal deadlines
-- Claim notification periods
-- Data return periods
-- Audit notice requirements
+[
+  {
+    "date_or_period": "the exact date or timeframe as written in the document",
+    "action_required": "what must be done",
+    "responsible_party": "who must do it",
+    "consequence_if_missed": "what happens if missed",
+    "priority": "Critical"
+  },
+  {
+    "date_or_period": "30 days",
+    "action_required": "remedy material breach after written notice",
+    "responsible_party": "breaching party",
+    "consequence_if_missed": "agreement may be terminated",
+    "priority": "Critical"
+  }
+]
 
-Classify priority as: Critical (contract validity at risk), Important (financial or operational impact), Advisory (administrative).`,
+Priority must be one of: Critical, Important, Advisory.
+Include ALL dates and timeframes: contract term, payment terms, notice periods, renewal deadlines, claim periods, data return periods, relocation notice, force majeure periods, audit notice, everything.`,
 
     clauses: `Analyze every major clause in this document. Respond with ONLY a JSON object. No text before or after. No markdown. No explanations. Only the JSON.
 
@@ -801,7 +810,15 @@ Classify priority as: Critical (contract validity at risk), Important (financial
   function parseJSON(text) {
     try {
       const clean = text.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
-      return JSON.parse(clean);
+      const parsed = JSON.parse(clean);
+      // If it's an array, wrap it in the expected structure for dates mode
+      if (Array.isArray(parsed)) {
+        return { deadlines: parsed, missing_dates: [], top_3_critical: [] };
+      }
+      // If it has deadlines array already, good
+      if (parsed.deadlines) return parsed;
+      // For dates mode - try to extract deadline-like data from any schema Claude returns
+      return parsed;
     } catch(e) { return null; }
   }
 
@@ -1009,17 +1026,20 @@ Classify priority as: Critical (contract validity at risk), Important (financial
 
   // ── EXPORT ──
   function exportSinglePDF() {
-    const content = document.querySelector('#panel-analysis .mdBody');
-    if (!content) return;
+    const panel = document.getElementById('panel-analysis');
+    if (!panel) return;
+    // Grab either the mdBody or the full panel content after the header
+    const mdBody = panel.querySelector('.mdBody');
+    const sourceEl = mdBody || panel;
     const opt = {
       margin: [15, 15],
       filename: `Lexis-${mode}-${fileName.replace(/\.[^.]+$/,'')}.pdf`,
-      html2canvas: { scale: 2 },
+      html2canvas: { scale: 2, useCORS: true },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'font-family:Georgia,serif;font-size:13px;line-height:1.7;color:#1a1a2e;padding:10px';
-    wrapper.innerHTML = `<h1 style="font-size:20px;border-bottom:2px solid #c9a84c;padding-bottom:8px;margin-bottom:16px">Lexis Intelligence — ${LABELS[mode]}</h1><p style="font-size:11px;color:#888;margin-bottom:20px">Document: ${fileName} · ${new Date().toLocaleDateString()}</p>` + content.innerHTML;
+    wrapper.style.cssText = 'font-family:Georgia,serif;font-size:12px;line-height:1.7;color:#1a1a2e;padding:10px;background:#fff';
+    wrapper.innerHTML = `<h1 style="font-size:18px;border-bottom:2px solid #c9a84c;padding-bottom:8px;margin-bottom:12px">Lexis Intelligence — ${LABELS[mode]}</h1><p style="font-size:10px;color:#888;margin-bottom:16px">Document: ${esc(fileName)} · ${new Date().toLocaleDateString()}</p>` + sourceEl.innerHTML;
     html2pdf().set(opt).from(wrapper).save();
   }
 
