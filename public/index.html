@@ -388,23 +388,7 @@ Overall risk level: **HIGH** or **MEDIUM** or **LOW**
 High risks: X | Medium risks: X | Low risks: X
 Top recommendation: One sentence.`,
 
-    dates: `Extract every deadline, date, and timeframe from this document. Produce ONLY the following table and sections. Do not add summaries, risk analysis, or recommendations.
-
-## Dates & Deadlines
-
-| Date or Timeframe | Action Required | Responsible Party | If Missed | Priority |
-|------------------|----------------|------------------|-----------|----------|
-| [exact date or period] | [what must happen] | [who] | [consequence] | Critical/Important/Advisory |
-
-Include every: contract term, payment deadline, notice period, renewal deadline, cure period, claim notification window, data return period, audit notice, relocation notice, confidentiality survival period, force majeure threshold.
-
-## Missing Dates
-List any dates that are blank or TBD in the document.
-
-## 3 Most Critical Deadlines
-1. [deadline] — [why critical]
-2. [deadline] — [why critical]
-3. [deadline] — [why critical]`,
+    dates: `Find and list every deadline, date, notice period, and timeframe in this legal document. For each one explain what must happen, who is responsible, and what the consequence is if missed.`,
 
     clauses: `Analyze this document clause by clause. Produce ONLY the following. Do not add risk summaries or recommendations sections.
 
@@ -625,7 +609,43 @@ What remedies are specified for breach?`,
     const t0 = Date.now();
 
     try {
-      const { text, tokens } = await callAPI(prompt);
+      let text, tokens;
+
+      if (mode === 'dates') {
+        // TWO-CALL APPROACH: Call 1 finds all deadlines naturally
+        const result1 = await callAPI(prompt);
+        const rawDeadlines = result1.text;
+
+        // Call 2: Claude reformats its own output into a clean table
+        const formatPrompt = `You found these deadlines in a legal document:
+
+${rawDeadlines}
+
+Now reformat this into ONLY a markdown table with these exact columns, followed by missing dates and top 3 critical deadlines. Nothing else.
+
+## Dates & Deadlines
+
+| Date or Timeframe | Action Required | Responsible Party | If Missed | Priority |
+|------------------|----------------|------------------|-----------|----------|
+[fill in every deadline as a row]
+
+## Missing Dates
+[list any dates that are blank or TBD]
+
+## Top 3 Critical Deadlines
+1. [deadline] — [why it is the most critical]
+2. [deadline] — [why]
+3. [deadline] — [why]`;
+
+        const result2 = await callAPI(formatPrompt, false);
+        text = result2.text;
+        tokens = result1.tokens + result2.tokens;
+      } else {
+        const result = await callAPI(prompt);
+        text = result.text;
+        tokens = result.tokens;
+      }
+
       lastAnalysisText = text;
       documentContext = text;
 
@@ -683,10 +703,17 @@ What remedies are specified for breach?`,
       try {
         const prompt = PROMPTS[m] + LANG_SUFFIX[currentLang];
         const prevMode = mode;
-        mode = m; // set mode so callAPI uses correct system prompt
-        const { text } = await callAPI(prompt);
-        mode = prevMode; // restore
-        results[m] = text;
+        mode = m;
+        if (m === 'dates') {
+          const r1 = await callAPI(prompt);
+          const formatPrompt = `You found these deadlines in a legal document:\n\n${r1.text}\n\nNow reformat into ONLY a markdown table + missing dates + top 3 critical. Nothing else.\n\n## Dates & Deadlines\n\n| Date or Timeframe | Action Required | Responsible Party | If Missed | Priority |\n|------------------|----------------|------------------|-----------|----------|\n[rows here]\n\n## Missing Dates\n[list]\n\n## Top 3 Critical Deadlines\n1. [deadline] — [why]\n2. [deadline] — [why]\n3. [deadline] — [why]`;
+          const r2 = await callAPI(formatPrompt, false);
+          results[m] = r2.text;
+        } else {
+          const { text } = await callAPI(prompt);
+          results[m] = text;
+        }
+        mode = prevMode;
       } catch (err) {
         results[m] = `Error: ${err.message}`;
       }
