@@ -784,22 +784,49 @@ Remedies specified for breach.`,
 
   // ── RENDER ──
   function renderMarkdown(text) {
+    // Pre-process: convert any risk format into standard [HIGH/MEDIUM/LOW] cards
+    // Handle "### [HIGH] Title", "1. High-Risk: Title", "⚠️ High-Risk Areas" etc.
+    text = text.replace(/^#{1,3}\s*\[?(HIGH|CRITICAL)\]?[:\s-]+(.*?)$/gim,
+      '### [HIGH] $2');
+    text = text.replace(/^#{1,3}\s*\[?(MEDIUM|MODERATE)\]?[:\s-]+(.*?)$/gim,
+      '### [MEDIUM] $2');
+    text = text.replace(/^#{1,3}\s*\[?(LOW|MINOR)\]?[:\s-]+(.*?)$/gim,
+      '### [LOW] $2');
+    // Handle numbered lists like "1. High-Risk: Title" or "**1. HIGH: Title**"
+    text = text.replace(/^\*?\*?\d+\.\s*\*?\*?(?:High[- ]Risk|HIGH)[:\s*]+(.*?)\*?\*?$/gim,
+      '### [HIGH] $1');
+    text = text.replace(/^\*?\*?\d+\.\s*\*?\*?(?:Medium[- ]Risk|MEDIUM|Moderate)[:\s*]+(.*?)\*?\*?$/gim,
+      '### [MEDIUM] $1');
+    text = text.replace(/^\*?\*?\d+\.\s*\*?\*?(?:Low[- ]Risk|LOW|Minor)[:\s*]+(.*?)\*?\*?$/gim,
+      '### [LOW] $1');
+
     let html = marked.parse(text);
-    // Color-code severity cards — match ### [HIGH], ### [MEDIUM], ### [LOW]
-    html = html.replace(/<h3>\[HIGH\](.*?)<\/h3>/g, '<div class="sevCard HIGH"><span class="sevBadge HIGH">HIGH</span><strong>$1</strong></div>');
-    html = html.replace(/<h3>\[MEDIUM\](.*?)<\/h3>/g, '<div class="sevCard MEDIUM"><span class="sevBadge MEDIUM">MEDIUM</span><strong>$1</strong></div>');
-    html = html.replace(/<h3>\[LOW\](.*?)<\/h3>/g, '<div class="sevCard LOW"><span class="sevBadge LOW">LOW</span><strong>$1</strong></div>');
-    html = html.replace(/<h3>\[CRITICAL\](.*?)<\/h3>/g, '<div class="sevCard HIGH"><span class="sevBadge HIGH">CRITICAL</span><strong>$1</strong></div>');
-    html = html.replace(/<h3>\[IMPORTANT\](.*?)<\/h3>/g, '<div class="sevCard MEDIUM"><span class="sevBadge MEDIUM">IMPORTANT</span><strong>$1</strong></div>');
+
+    // Color-code severity cards
+    html = html.replace(/<h3>\[HIGH\]\s*(.*?)<\/h3>/g,
+      '<div class="sevCard HIGH"><span class="sevBadge HIGH">HIGH</span><strong>$1</strong>');
+    html = html.replace(/<h3>\[MEDIUM\]\s*(.*?)<\/h3>/g,
+      '<div class="sevCard MEDIUM"><span class="sevBadge MEDIUM">MEDIUM</span><strong>$1</strong>');
+    html = html.replace(/<h3>\[LOW\]\s*(.*?)<\/h3>/g,
+      '<div class="sevCard LOW"><span class="sevBadge LOW">LOW</span><strong>$1</strong>');
+
+    // Close open sevCards before next card or end
+    html = html.replace(/(<div class="sevCard[^"]*">(?:(?!<div class="sevCard).)*)/gs,
+      '$1</div>');
+
     return html;
   }
 
   function extractRiskScore(text) {
-    const highCount = (text.match(/\[HIGH\]/g) || []).length + (text.match(/\*\*HIGH\*\*/g) || []).length;
-    const medCount = (text.match(/\[MEDIUM\]/g) || []).length + (text.match(/\*\*MEDIUM\*\*/g) || []).length;
-    const lowCount = (text.match(/\[LOW\]/g) || []).length + (text.match(/\*\*LOW\*\*/g) || []).length;
-    const overall = text.match(/Overall risk level:\s*\*\*(HIGH|MEDIUM|LOW)\*\*/i);
-    return { highCount, medCount, lowCount, overall: overall ? overall[1] : (highCount > 0 ? 'HIGH' : medCount > 0 ? 'MEDIUM' : 'LOW') };
+    // Count HIGH risks — match [HIGH], **HIGH**, High-Risk, ⚠️ High, 🚨 etc.
+    const highCount = (text.match(/\[HIGH\]|\*\*HIGH\*\*|High[- ]Risk|HIGH Risk|🚨|Critical Risk/gi) || []).length;
+    const medCount = (text.match(/\[MEDIUM\]|\*\*MEDIUM\*\*|Medium[- ]Risk|MEDIUM Risk|Moderate Risk|⚠️/gi) || []).length;
+    const lowCount = (text.match(/\[LOW\]|\*\*LOW\*\*|Low[- ]Risk|LOW Risk|Minor Risk|🔍/gi) || []).length;
+    const overall = text.match(/Overall[^:]*:\s*\*?\*?(HIGH|MEDIUM|LOW)\*?\*?/i) ||
+                    text.match(/Overall Assessment[^:]*:\s*\*?\*?(HIGH|MEDIUM|LOW)\*?\*?/i);
+    const level = overall ? overall[1].toUpperCase() :
+                  (highCount > 2 ? 'HIGH' : highCount > 0 ? 'MEDIUM' : medCount > 0 ? 'MEDIUM' : 'LOW');
+    return { highCount, medCount, lowCount, overall: level };
   }
 
   function renderAnalysis(panelId, title, text, elapsed, tokens) {
