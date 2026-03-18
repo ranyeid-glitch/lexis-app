@@ -136,10 +136,12 @@
   .mdBody strong { font-weight: 500; color: var(--ink); }
   .mdBody code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: var(--parchment); padding: 1px 5px; }
   .mdBody blockquote { border-left: 3px solid var(--gold); padding: 8px 14px; background: var(--parchment); margin: 12px 0; color: var(--muted); font-style: italic; }
-  .mdBody hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+  .mdBody hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; display: block; }
 
   /* Severity cards */
-  .sevCard { padding: 14px 16px; margin: 10px 0; border-left: 4px solid; }
+  .sevCard { padding: 14px 16px; margin: 12px 0 0; border-left: 4px solid; }
+  .sevCard p { margin: 6px 0; }
+  .sevCard strong { display: block; margin-bottom: 4px; }
   .sevCard.HIGH { border-color: var(--red); background: var(--red-bg); }
   .sevCard.MEDIUM { border-color: #d4820a; background: var(--amber-bg); }
   .sevCard.LOW { border-color: var(--green); background: var(--green-bg); }
@@ -345,7 +347,7 @@ Is this document **standard**, **favorable**, or **concerning**? Why? Use bold f
 
     risks: `You are a legal risk analyst. Identify every risk and red flag in this document.
 
-Use this EXACT format for each risk so it can be color-coded:
+CRITICAL INSTRUCTION: You MUST use EXACTLY this format for EVERY single risk. No exceptions. No emojis. No different headers. No numbered lists. Only use ### [HIGH], ### [MEDIUM], or ### [LOW] as the header for each risk.
 
 ### [HIGH] Risk Title Here
 **Clause:** Section X.X
@@ -364,16 +366,23 @@ Use this EXACT format for each risk so it can be color-coded:
 ---
 
 ### [LOW] Risk Title Here
-...
+**Clause:** Section X.X
+**Explanation:** Plain language explanation.
+**Why it matters:** Why this matters.
+**Ask a lawyer:** Question for legal counsel.
 
-Order from most to least severe.
+---
+
+Order all risks from most to least severe. Every single risk must start with ### [HIGH], ### [MEDIUM], or ### [LOW] — nothing else is acceptable.
+
+End with:
 
 ## Risk Summary
-Overall risk level: **HIGH / MEDIUM / LOW**
+Overall risk level: **HIGH** or **MEDIUM** or **LOW**
 High risks found: X
 Medium risks found: X
 Low risks found: X
-Top recommendation: ...`,
+Top recommendation: One clear sentence.`,
 
     dates: `You are a legal deadline specialist. Extract every date, deadline, and timeframe.
 
@@ -776,14 +785,12 @@ Remedies specified for breach.`,
   // ── RENDER ──
   function renderMarkdown(text) {
     let html = marked.parse(text);
-    // Color-code severity cards
-    html = html.replace(/<h3>\[HIGH\](.*?)<\/h3>/g, '<div class="sevCard HIGH"><span class="sevBadge HIGH">HIGH</span><strong>$1</strong>');
-    html = html.replace(/<h3>\[MEDIUM\](.*?)<\/h3>/g, '<div class="sevCard MEDIUM"><span class="sevBadge MEDIUM">MEDIUM</span><strong>$1</strong>');
-    html = html.replace(/<h3>\[LOW\](.*?)<\/h3>/g, '<div class="sevCard LOW"><span class="sevBadge LOW">LOW</span><strong>$1</strong>');
-    html = html.replace(/<h3>\[CRITICAL\](.*?)<\/h3>/g, '<div class="sevCard HIGH"><span class="sevBadge HIGH">CRITICAL</span><strong>$1</strong>');
-    html = html.replace(/<h3>\[IMPORTANT\](.*?)<\/h3>/g, '<div class="sevCard MEDIUM"><span class="sevBadge MEDIUM">IMPORTANT</span><strong>$1</strong>');
-    // Close open severity cards before next h3 or h2
-    html = html.replace(/(<div class="sevCard[^"]*">[^]*?)(?=<div class="sevCard|<h2>|$)/g, '$1</div>');
+    // Color-code severity cards — match ### [HIGH], ### [MEDIUM], ### [LOW]
+    html = html.replace(/<h3>\[HIGH\](.*?)<\/h3>/g, '<div class="sevCard HIGH"><span class="sevBadge HIGH">HIGH</span><strong>$1</strong></div>');
+    html = html.replace(/<h3>\[MEDIUM\](.*?)<\/h3>/g, '<div class="sevCard MEDIUM"><span class="sevBadge MEDIUM">MEDIUM</span><strong>$1</strong></div>');
+    html = html.replace(/<h3>\[LOW\](.*?)<\/h3>/g, '<div class="sevCard LOW"><span class="sevBadge LOW">LOW</span><strong>$1</strong></div>');
+    html = html.replace(/<h3>\[CRITICAL\](.*?)<\/h3>/g, '<div class="sevCard HIGH"><span class="sevBadge HIGH">CRITICAL</span><strong>$1</strong></div>');
+    html = html.replace(/<h3>\[IMPORTANT\](.*?)<\/h3>/g, '<div class="sevCard MEDIUM"><span class="sevBadge MEDIUM">IMPORTANT</span><strong>$1</strong></div>');
     return html;
   }
 
