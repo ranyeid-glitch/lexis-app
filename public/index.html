@@ -370,21 +370,20 @@ Overall risk level: **HIGH** or **MEDIUM** or **LOW**
 High risks: X | Medium risks: X | Low risks: X
 Top recommendation: One sentence.`,
 
-    dates: `Extract every date and deadline from this document. Respond with ONLY a JSON object. No text before or after. No markdown. No explanations. Only the JSON.
+    dates: `You are extracting dates and deadlines from a legal document. Return ONLY this JSON structure with no other text:
 
-{
-  "deadlines": [
-    {
-      "date_or_period": "string",
-      "action_required": "string",
-      "responsible_party": "string",
-      "consequence_if_missed": "string",
-      "priority": "Critical|Important|Advisory"
-    }
-  ],
-  "missing_dates": ["string"],
-  "top_3_critical": [{"deadline": "string", "why_critical": "string"}]
-}`,
+{"deadlines":[{"date_or_period":"string","action_required":"string","responsible_party":"string","consequence_if_missed":"string","priority":"Critical|Important|Advisory"}],"missing_dates":["string"],"top_3_critical":[{"deadline":"string","why_critical":"string"}]}
+
+Find every date, deadline, timeframe, and notice period in the document. Examples of what to include:
+- Contract term end date
+- Payment deadlines  
+- Notice periods (30 days, 90 days etc)
+- Renewal deadlines
+- Claim notification periods
+- Data return periods
+- Audit notice requirements
+
+Classify priority as: Critical (contract validity at risk), Important (financial or operational impact), Advisory (administrative).`,
 
     clauses: `Analyze every major clause in this document. Respond with ONLY a JSON object. No text before or after. No markdown. No explanations. Only the JSON.
 
@@ -917,7 +916,8 @@ Top recommendation: One sentence.`,
         <h3 style="font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 10px">Enforcement</h3>
         <p style="font-size:14px;line-height:1.7">${esc(data.enforcement||'')}</p>`;
     }
-    return null;
+    // Fallback: show JSON as formatted table
+    return `<div style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--parchment);padding:16px;white-space:pre-wrap;overflow-x:auto">${escHtml(JSON.stringify(data, null, 2))}</div>`;
   }
 
   function renderAnalysis(panelId, title, text, elapsed, tokens) {
