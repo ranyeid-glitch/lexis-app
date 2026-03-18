@@ -325,7 +325,7 @@
   const PROMPTS = {
     summary: `Summarize this legal document in plain language for a non-lawyer business executive.
 
-Use this exact structure:
+STRICT INSTRUCTION: This is a SUMMARY ONLY. Do NOT include any risk analysis, red flags, recommendations, compliance issues, or risk ratings. Do NOT use HIGH/MEDIUM/LOW labels. Do NOT add sections that were not requested below. ONLY provide the sections listed here — nothing else.
 
 ## Document Type
 What kind of document is this?
@@ -333,25 +333,31 @@ What kind of document is this?
 ## Parties
 | Party | Role | Jurisdiction |
 |-------|------|-------------|
-| Name | Role | Country |
+| Fill in | Fill in | Fill in |
 
 ## Core Purpose
-In 2-3 sentences, what does this document do?
+In 2-3 sentences only, what does this document do?
 
 ## Key Commercial Terms
 | Term | Detail |
 |------|--------|
 | Duration | |
-| Payment | |
-| Key rates/prices | |
-| Insurance | |
+| Payment terms | |
+| Key rates or prices | |
+| Insurance required | |
 | Governing law | |
 
 ## Main Obligations
-For each party, bullet points of what they must do.
+**[First party name]:**
+- Obligation 1
+- Obligation 2
+
+**[Second party name]:**
+- Obligation 1
+- Obligation 2
 
 ## Verdict
-Is this document **Standard**, **Favorable to one party**, or **Requires negotiation**? One paragraph explanation.`,
+One paragraph only: Is this document Standard, Favorable to one party, or Does it require negotiation? Why?`,
 
     risks: `Identify every risk and red flag in this legal document.
 
@@ -391,6 +397,8 @@ Top recommendation: One sentence.`,
 
     dates: `Extract every date, deadline, and time obligation from this document.
 
+STRICT INSTRUCTION: This is a DATES AND DEADLINES extraction ONLY. Do NOT include risk analysis, recommendations, or risk ratings. Do NOT use HIGH/MEDIUM/LOW labels. ONLY provide the sections listed below.
+
 ## All Dates and Deadlines
 
 Create a table of every date or timeframe found:
@@ -406,6 +414,8 @@ List any dates that are blank, TBD, or missing but should be present.
 List the 3 most important deadlines and explain why each is critical to the agreement.`,
 
     clauses: `Analyze this document clause by clause.
+
+STRICT INSTRUCTION: This is a CLAUSE ANALYSIS ONLY. Do NOT add a separate risk section, recommendations section, or overall risk rating at the end. Do NOT use HIGH/MEDIUM/LOW severity labels. ONLY classify each clause as Standard, Favorable, Unfavorable, or Unusual.
 
 For each major clause, use this exact format:
 
@@ -428,6 +438,8 @@ Cover every substantive clause. End with:
 | Unusual | |`,
 
     definitions: `Analyze the defined terms and language in this document.
+
+STRICT INSTRUCTION: This is a DEFINITIONS AND LANGUAGE analysis ONLY. Do NOT include risk ratings, recommendations sections, or HIGH/MEDIUM/LOW labels. ONLY provide the sections listed below.
 
 ## Defined Terms
 List every term that is explicitly defined or capitalized:
@@ -456,6 +468,8 @@ Terms used differently in different parts of the document.`,
 
     compliance: `Review this document for regulatory and legal compliance.
 
+STRICT INSTRUCTION: This is a COMPLIANCE REVIEW ONLY. Do NOT include HIGH/MEDIUM/LOW risk cards or general risk analysis. Use tables and bullet points. ONLY provide the sections listed below.
+
 ## Applicable Laws
 List every law, regulation, or standard this document references or triggers:
 
@@ -483,6 +497,8 @@ Any data protection, GDPR, or personal data handling issues.
 Prioritized list of compliance changes needed before signing.`,
 
     obligations: `Map every obligation, right, and restriction for each party in this document.
+
+STRICT INSTRUCTION: This is an OBLIGATIONS MAP ONLY. Do NOT include risk analysis sections or HIGH/MEDIUM/LOW risk ratings. Use tables and bullet points. ONLY provide the sections listed below.
 
 For each party identified, provide:
 
