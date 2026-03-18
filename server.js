@@ -37,12 +37,7 @@ async function extractText(buffer, fileType) {
     });
     return text;
   }
-  if (fileType === 'pptx') {
-    const xml = buffer.toString('utf8');
-    const matches = xml.match(/<a:t[^>]*>([^<]+)<\/a:t>/g) || [];
-    return matches.map(m => m.replace(/<[^>]+>/g, '')).join('\n');
-  }
-  return null;
+  return '[Unsupported file type]';
 }
 
 function handleAnalyze(req, res) {
@@ -51,46 +46,49 @@ function handleAnalyze(req, res) {
   req.on('end', async () => {
     try {
       const payload = JSON.parse(body);
-      const fileType = payload._fileType;
+      const fileType = (payload._fileType || '').toLowerCase();
       const fileData = payload._fileData;
       const officeTypes = ['doc', 'docx', 'xlsx', 'xls', 'pptx'];
+
+      console.log(`[REQUEST] fileType=${fileType}, hasFileData=${!!fileData}, isOffice=${officeTypes.includes(fileType)}`);
 
       if (fileType && fileData && officeTypes.includes(fileType)) {
         const buffer = Buffer.from(fileData, 'base64');
         let extractedText = '';
         try {
           extractedText = await extractText(buffer, fileType);
-          if (!extractedText || extractedText.trim().length === 0) {
-            extractedText = '[Document text could not be extracted]';
-          }
+          console.log(`[EXTRACT] success, length=${extractedText.length}, preview="${extractedText.substring(0,100)}"`);
         } catch (e) {
           extractedText = `[Extraction error: ${e.message}]`;
+          console.log(`[EXTRACT] error: ${e.message}`);
         }
 
-        if (payload.messages && payload.messages[0]) {
-          const lastBlock = payload.messages[0].content;
-          const promptBlock = Array.isArray(lastBlock)
-            ? lastBlock.find(b => b.type === 'text')
-            : null;
-          const promptText = promptBlock ? promptBlock.text : '';
-
-          payload.messages[0].content = [
-            {
-              type: 'text',
-              text: `[Document: ${fileType.toUpperCase()} file]\n\n${extractedText}`
-            },
-            {
-              type: 'text',
-              text: promptText
-            }
-          ];
+        // Get the prompt from the original message
+        const origContent = payload.messages[0].content;
+        let promptText = '';
+        if (Array.isArray(origContent)) {
+          const textBlock = origContent.find(b => b.type === 'text');
+          promptText = textBlock ? textBlock.text : '';
+        } else if (typeof origContent === 'string') {
+          promptText = origContent;
         }
+
+        console.log(`[PROMPT] length=${promptText.length}, preview="${promptText.substring(0,80)}"`);
+
+        // Build clean message with text only — no document block
+        payload.messages = [{
+          role: 'user',
+          content: `Here is the content of a ${fileType.toUpperCase()} document:\n\n${extractedText}\n\n---\n\n${promptText}`
+        }];
+
+        console.log(`[PAYLOAD] messages built, total content length=${payload.messages[0].content.length}`);
       }
 
       delete payload._fileType;
       delete payload._fileData;
 
       const outBody = JSON.stringify(payload);
+      console.log(`[SEND] outBody length=${outBody.length}`);
 
       const options = {
         hostname: 'api.anthropic.com',
@@ -108,6 +106,7 @@ function handleAnalyze(req, res) {
         let data = '';
         apiRes.on('data', chunk => { data += chunk; });
         apiRes.on('end', () => {
+          console.log(`[RESPONSE] status=${apiRes.statusCode}, length=${data.length}`);
           res.writeHead(apiRes.statusCode, {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*'
@@ -117,6 +116,7 @@ function handleAnalyze(req, res) {
       });
 
       apiReq.on('error', err => {
+        console.log(`[ERROR] ${err.message}`);
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: { message: err.message } }));
       });
@@ -125,6 +125,7 @@ function handleAnalyze(req, res) {
       apiReq.end();
 
     } catch (err) {
+      console.log(`[FATAL] ${err.message}`);
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: { message: err.message } }));
     }
