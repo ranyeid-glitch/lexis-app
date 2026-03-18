@@ -23,7 +23,7 @@ function serveFile(res, filePath, contentType) {
   });
 }
 
-async function convertToText(buffer, fileType) {
+async function extractText(buffer, fileType) {
   if (fileType === 'docx' || fileType === 'doc') {
     const result = await mammoth.extractRawText({ buffer });
     return result.value;
@@ -33,28 +33,14 @@ async function convertToText(buffer, fileType) {
     let text = '';
     workbook.SheetNames.forEach(sheetName => {
       text += `\n=== Sheet: ${sheetName} ===\n`;
-      const sheet = workbook.Sheets[sheetName];
-      text += XLSX.utils.sheet_to_csv(sheet);
+      text += XLSX.utils.sheet_to_csv(workbook.Sheets[sheetName]);
     });
     return text;
   }
   if (fileType === 'pptx') {
-    const entries = [];
-    let text = '';
-    try {
-      const JSZip = require('jszip');
-      const zip = await JSZip.loadAsync(buffer);
-      const slideFiles = Object.keys(zip.files).filter(n => n.match(/ppt\/slides\/slide\d+\.xml/));
-      for (let i = 0; i < slideFiles.length; i++) {
-        const xml = await zip.files[slideFiles[i]].async('string');
-        const matches = xml.match(/<a:t[^>]*>([^<]+)<\/a:t>/g) || [];
-        text += `\n=== Slide ${i + 1} ===\n`;
-        text += matches.map(m => m.replace(/<[^>]+>/g, '')).join(' ');
-      }
-    } catch(e) {
-      text = '[Could not parse PowerPoint file]';
-    }
-    return text;
+    const xml = buffer.toString('utf8');
+    const matches = xml.match(/<a:t[^>]*>([^<]+)<\/a:t>/g) || [];
+    return matches.map(m => m.replace(/<[^>]+>/g, '')).join('\n');
   }
   return null;
 }
@@ -67,26 +53,37 @@ function handleAnalyze(req, res) {
       const payload = JSON.parse(body);
       const fileType = payload._fileType;
       const fileData = payload._fileData;
+      const officeTypes = ['doc', 'docx', 'xlsx', 'xls', 'pptx'];
 
-      if (fileType && fileData && !['pdf', 'txt', 'md', 'csv'].includes(fileType)) {
+      if (fileType && fileData && officeTypes.includes(fileType)) {
         const buffer = Buffer.from(fileData, 'base64');
         let extractedText = '';
         try {
-          extractedText = await convertToText(buffer, fileType);
+          extractedText = await extractText(buffer, fileType);
+          if (!extractedText || extractedText.trim().length === 0) {
+            extractedText = '[Document text could not be extracted]';
+          }
         } catch (e) {
-          extractedText = `[Could not extract text: ${e.message}]`;
+          extractedText = `[Extraction error: ${e.message}]`;
         }
 
-        if (payload.messages && payload.messages[0] && payload.messages[0].content) {
-          payload.messages[0].content = payload.messages[0].content.map(block => {
-            if (block.type === 'document') {
-              return {
-                type: 'text',
-                text: `[Document extracted from ${fileType.toUpperCase()} file]\n\n${extractedText}`
-              };
+        if (payload.messages && payload.messages[0]) {
+          const lastBlock = payload.messages[0].content;
+          const promptBlock = Array.isArray(lastBlock)
+            ? lastBlock.find(b => b.type === 'text')
+            : null;
+          const promptText = promptBlock ? promptBlock.text : '';
+
+          payload.messages[0].content = [
+            {
+              type: 'text',
+              text: `[Document: ${fileType.toUpperCase()} file]\n\n${extractedText}`
+            },
+            {
+              type: 'text',
+              text: promptText
             }
-            return block;
-          });
+          ];
         }
       }
 
