@@ -568,15 +568,25 @@ Remedies specified for breach.`,
     const content = [];
     const officeExts = ['doc','docx','xlsx','xls','pptx'];
     const isOffice = includeDoc && fileB64 && officeExts.includes(fileExt);
-    if (includeDoc && fileB64 && !isOffice) {
-      content.push({ type: 'document', source: { type: 'base64', media_type: fileMime, data: fileB64 } });
+    if (includeDoc && fileB64) {
+      if (isOffice) {
+        // Office file: send as text placeholder, server will replace with extracted text
+        content.push({ type: 'text', text: '[OFFICE_DOC_PLACEHOLDER]' });
+      } else {
+        content.push({ type: 'document', source: { type: 'base64', media_type: fileMime, data: fileB64 } });
+      }
     }
     content.push({ type: 'text', text: prompt });
+
+    const officeList = ['doc','docx','xlsx','xls','pptx'];
+    const sendFileData = includeDoc && fileB64 && officeList.includes(fileExt);
 
     const res = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        _fileType: fileExt,
+        _fileData: sendFileData ? fileB64 : undefined,
         model: 'claude-sonnet-4-20250514',
         max_tokens: 2000,
         system: 'You are Lexis, an expert legal document analyst with 20+ years of experience across contracts, NDAs, employment law, real estate, compliance, regulations, and judicial decisions. Always use markdown formatting in your responses for clear structure. Be thorough and precise.',
@@ -735,7 +745,7 @@ Remedies specified for breach.`,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           _fileType: fileExt,
-          _fileData: isOffice ? fileB64 : undefined,
+          _fileData: (includeDoc && fileB64 && officeExts.includes(fileExt)) ? fileB64 : undefined,
           model: 'claude-sonnet-4-20250514',
           max_tokens: 1000,
           system: 'You are Lexis, an expert legal document analyst. You are answering follow-up questions about a legal document that has already been analyzed. Be concise, precise, and use markdown formatting.',
