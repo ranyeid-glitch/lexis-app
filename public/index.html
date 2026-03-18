@@ -3,179 +3,505 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lexis Intelligence — Legal Document Analyzer</title>
+<title>Lexis Intelligence v2 — Legal Document Analyzer</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
   :root {
     --ink: #1a1a2e; --ink2: #2d2d4a; --gold: #c9a84c; --gold-light: #f0dfa0;
     --cream: #faf8f3; --parchment: #f2ede0; --border: #ddd8c8; --muted: #8a8070;
-    --red: #b04040; --red-bg: #fdf0f0; --green: #2d6a4f; --green-bg: #f0f7f4;
-    --amber: #92600a; --amber-bg: #fdf6e3;
+    --red: #b04040; --red-bg: #fdf0f0; --red-border: #e8c0c0;
+    --green: #2d6a4f; --green-bg: #f0f7f4; --green-border: #b0d4c0;
+    --amber: #92600a; --amber-bg: #fdf6e3; --amber-border: #e8d090;
+    --blue: #1e4a7a; --blue-bg: #f0f4fa; --blue-border: #b0c8e8;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--cream); font-family: 'IBM Plex Sans', sans-serif; color: var(--ink); min-height: 100vh; }
 
-  /* HEADER */
+  /* ── HEADER ── */
   .header {
-    background: var(--ink); padding: 0 32px; height: 64px;
+    background: var(--ink); padding: 0 28px; height: 62px;
     display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 100;
+    border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 200;
   }
-  .header-left { display: flex; align-items: center; gap: 14px; }
-  .logo-mark { width: 38px; height: 38px; border: 1.5px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 20px; }
-  .logo-text { font-family: 'Playfair Display', serif; font-size: 20px; color: #fff; }
-  .logo-sub { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--gold); letter-spacing: 0.14em; text-transform: uppercase; margin-top: 2px; }
-  .status-pill { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 4px 12px; border: 1px solid rgba(201,168,76,0.4); color: var(--gold); letter-spacing: 0.08em; }
+  .hLeft { display: flex; align-items: center; gap: 12px; }
+  .logoMark { width: 36px; height: 36px; border: 1.5px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .logoText { font-family: 'Playfair Display', serif; font-size: 18px; color: #fff; }
+  .logoSub { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--gold); letter-spacing: 0.14em; text-transform: uppercase; margin-top: 2px; }
+  .hRight { display: flex; align-items: center; gap: 12px; }
+  .langToggle { display: flex; background: rgba(255,255,255,0.08); border: 1px solid rgba(201,168,76,0.3); overflow: hidden; }
+  .langBtn { padding: 5px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.5); cursor: pointer; background: none; border: none; transition: all 0.15s; }
+  .langBtn.on { background: var(--gold); color: var(--ink); font-weight: 500; }
+  .statusPill { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 4px 12px; border: 1px solid rgba(201,168,76,0.4); color: var(--gold); letter-spacing: 0.06em; }
 
-  /* LAYOUT */
-  .layout { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 64px); }
+  /* ── LAYOUT ── */
+  .layout { display: grid; grid-template-columns: 290px 1fr; min-height: calc(100vh - 62px); }
 
-  /* SIDEBAR */
-  .sidebar { background: var(--parchment); border-right: 1px solid var(--border); padding: 24px 18px; display: flex; flex-direction: column; gap: 22px; }
-  .section-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  /* ── SIDEBAR ── */
+  .sidebar { background: var(--parchment); border-right: 1px solid var(--border); padding: 20px 16px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+  .sLabel { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
 
-  /* Drop zone */
-  .drop-zone { border: 1.5px dashed var(--border); background: var(--cream); padding: 22px 14px; text-align: center; cursor: pointer; transition: all 0.2s; user-select: none; }
-  .drop-zone:hover, .drop-zone.drag { border-color: var(--gold); background: #fdf9f0; }
-  .drop-zone.loaded { border-style: solid; border-color: var(--green); background: var(--green-bg); }
-  .drop-icon { font-size: 28px; margin-bottom: 8px; }
-  .drop-main { font-size: 14px; font-weight: 500; color: var(--ink); margin-bottom: 3px; }
-  .drop-sub { font-size: 12px; color: var(--muted); }
-  .drop-filename { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--green); margin-top: 8px; word-break: break-all; display: none; }
-  .drop-zone.loaded .drop-filename { display: block; }
+  .dropZone { border: 1.5px dashed var(--border); background: var(--cream); padding: 20px 12px; text-align: center; cursor: pointer; transition: all 0.2s; user-select: none; }
+  .dropZone:hover, .dropZone.drag { border-color: var(--gold); background: #fdf9f0; }
+  .dropZone.loaded { border-style: solid; border-color: var(--green); background: var(--green-bg); }
+  .dIcon { font-size: 26px; margin-bottom: 6px; }
+  .dMain { font-size: 13px; font-weight: 500; color: var(--ink); margin-bottom: 2px; }
+  .dSub { font-size: 11px; color: var(--muted); }
+  .dName { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--green); margin-top: 6px; word-break: break-all; display: none; }
+  .dropZone.loaded .dName { display: block; }
 
-  /* Mode buttons */
-  .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .mode-btn { padding: 10px 8px; border: 1px solid var(--border); background: var(--cream); cursor: pointer; text-align: left; transition: all 0.15s; font-family: 'IBM Plex Sans', sans-serif; width: 100%; }
-  .mode-btn:hover { border-color: var(--gold); background: #fdf9f0; }
-  .mode-btn.active { border-color: var(--ink); background: var(--ink); color: #fff; }
-  .mode-btn.active .mi { color: var(--gold); }
-  .mi { font-size: 15px; display: block; margin-bottom: 4px; }
+  .modeGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .modeBtn { padding: 9px 7px; border: 1px solid var(--border); background: var(--cream); cursor: pointer; text-align: left; transition: all 0.15s; font-family: 'IBM Plex Sans', sans-serif; width: 100%; }
+  .modeBtn:hover { border-color: var(--gold); background: #fdf9f0; }
+  .modeBtn.on { border-color: var(--ink); background: var(--ink); color: #fff; }
+  .modeBtn.on .mi { color: var(--gold); }
+  .mi { font-size: 14px; display: block; margin-bottom: 3px; }
   .ml { font-size: 11px; font-weight: 500; line-height: 1.3; display: block; }
 
-  /* Custom */
-  .custom-box { display: none; }
-  .custom-box.on { display: block; }
-  .custom-ta { width: 100%; border: 1px solid var(--border); background: var(--cream); padding: 10px 12px; font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; color: var(--ink); resize: vertical; min-height: 80px; outline: none; }
-  .custom-ta:focus { border-color: var(--gold); }
+  .fullBtn { width: 100%; padding: 11px; background: var(--ink2); color: var(--gold-light); border: 1px solid var(--gold); font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; cursor: pointer; transition: all 0.2s; text-transform: uppercase; }
+  .fullBtn:hover:not(:disabled) { background: var(--gold); color: var(--ink); }
+  .fullBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  /* Run button */
-  .run-btn { width: 100%; padding: 15px; background: var(--gold); color: var(--ink); border: none; font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; transition: all 0.2s; }
-  .run-btn:hover:not(:disabled) { background: #b8943e; }
-  .run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .customBox { display: none; }
+  .customBox.on { display: block; }
+  .customTa { width: 100%; border: 1px solid var(--border); background: var(--cream); padding: 9px 11px; font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; color: var(--ink); resize: vertical; min-height: 70px; outline: none; }
+  .customTa:focus { border-color: var(--gold); }
 
-  .disclaimer { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); line-height: 1.6; border-top: 1px solid var(--border); padding-top: 14px; }
+  .runBtn { width: 100%; padding: 14px; background: var(--gold); color: var(--ink); border: none; font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; transition: all 0.2s; }
+  .runBtn:hover:not(:disabled) { background: #b8943e; }
+  .runBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  /* MAIN */
-  .main { padding: 36px; overflow-y: auto; }
+  .disclaimer { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); line-height: 1.6; border-top: 1px solid var(--border); padding-top: 12px; }
 
-  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 420px; text-align: center; opacity: 0.35; }
-  .empty-glyph { font-family: 'Playfair Display', serif; font-size: 80px; color: var(--border); line-height: 1; margin-bottom: 16px; }
-  .empty-label { font-size: 15px; color: var(--muted); line-height: 1.8; }
+  /* ── MAIN ── */
+  .main { display: flex; flex-direction: column; overflow: hidden; }
 
-  .loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 420px; gap: 18px; }
-  .loading-mode { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
-  .loading-bar { width: 220px; height: 2px; background: var(--border); overflow: hidden; }
-  .loading-fill { height: 100%; background: var(--gold); animation: sweep 1.5s ease-in-out infinite; }
+  /* Tab bar */
+  .tabBar { display: flex; border-bottom: 1px solid var(--border); background: var(--parchment); padding: 0 28px; gap: 0; }
+  .tab { padding: 12px 18px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; background: none; border-top: none; border-left: none; border-right: none; text-transform: uppercase; }
+  .tab:hover { color: var(--ink); }
+  .tab.on { color: var(--ink); border-bottom-color: var(--gold); }
+
+  .panels { flex: 1; overflow-y: auto; }
+  .panel { display: none; padding: 28px 32px; }
+  .panel.on { display: block; }
+
+  /* Empty state */
+  .emptyState { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 380px; text-align: center; opacity: 0.35; }
+  .emptyGlyph { font-family: 'Playfair Display', serif; font-size: 72px; color: var(--border); line-height: 1; margin-bottom: 14px; }
+  .emptyLabel { font-size: 14px; color: var(--muted); line-height: 1.8; }
+
+  /* Loading */
+  .loadState { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 380px; gap: 16px; }
+  .loadMode { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
+  .loadBar { width: 200px; height: 2px; background: var(--border); overflow: hidden; }
+  .loadFill { height: 100%; background: var(--gold); animation: sweep 1.5s ease-in-out infinite; }
   @keyframes sweep { 0%{width:0;margin-left:0} 50%{width:100%;margin-left:0} 100%{width:0;margin-left:100%} }
-  .loading-sub { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
+  .loadSub { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
+  .loadProgress { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--gold); letter-spacing: 0.06em; }
 
-  .result-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
-  .result-title { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--ink); }
-  .result-file { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 4px; }
-  .result-meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); text-align: right; line-height: 1.8; }
-  .result-body { font-size: 15px; line-height: 1.85; color: var(--ink); white-space: pre-wrap; }
+  /* Result header */
+  .resultHdr { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .resultTitle { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--ink); }
+  .resultFile { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 3px; }
+  .resultMeta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); text-align: right; line-height: 1.8; }
+  .resultActions { display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end; }
+  .actBtn { padding: 5px 12px; border: 1px solid var(--border); background: transparent; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); cursor: pointer; transition: all 0.15s; letter-spacing: 0.06em; text-transform: uppercase; }
+  .actBtn:hover { border-color: var(--ink); color: var(--ink); }
+  .actBtn.gold { border-color: var(--gold); color: var(--amber); }
+  .actBtn.gold:hover { background: var(--gold); color: var(--ink); }
 
-  .copy-btn { margin-top: 24px; padding: 7px 16px; border: 1px solid var(--border); background: transparent; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); cursor: pointer; transition: all 0.2s; }
-  .copy-btn:hover { border-color: var(--ink); color: var(--ink); }
+  /* Risk score */
+  .riskScore { display: flex; align-items: center; gap: 16px; padding: 16px 20px; margin-bottom: 20px; border: 1px solid var(--border); background: var(--cream); }
+  .riskMeter { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .riskFill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+  .riskFill.high { background: var(--red); }
+  .riskFill.medium { background: #d4820a; }
+  .riskFill.low { background: var(--green); }
+  .riskLabel { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; white-space: nowrap; }
+  .riskLabel.high { color: var(--red); }
+  .riskLabel.medium { color: var(--amber); }
+  .riskLabel.low { color: var(--green); }
+  .riskCount { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); }
 
-  .error-box { background: var(--red-bg); border: 1px solid #e8c0c0; padding: 20px 24px; color: var(--red); font-size: 14px; line-height: 1.7; margin-top: 20px; }
-  .error-box strong { display: block; font-size: 16px; margin-bottom: 8px; }
+  /* Markdown rendered output */
+  .mdBody { font-size: 14px; line-height: 1.85; color: var(--ink); }
+  .mdBody h1 { font-family: 'Playfair Display', serif; font-size: 20px; margin: 24px 0 10px; color: var(--ink); border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  .mdBody h2 { font-family: 'Playfair Display', serif; font-size: 17px; margin: 20px 0 8px; color: var(--ink); }
+  .mdBody h3 { font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; font-weight: 500; margin: 16px 0 6px; color: var(--ink2); }
+  .mdBody p { margin-bottom: 10px; }
+  .mdBody ul, .mdBody ol { padding-left: 20px; margin-bottom: 10px; }
+  .mdBody li { margin-bottom: 4px; }
+  .mdBody strong { font-weight: 500; color: var(--ink); }
+  .mdBody code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: var(--parchment); padding: 1px 5px; }
+  .mdBody blockquote { border-left: 3px solid var(--gold); padding: 8px 14px; background: var(--parchment); margin: 12px 0; color: var(--muted); font-style: italic; }
+  .mdBody hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+  /* Severity cards */
+  .sevCard { padding: 14px 16px; margin: 10px 0; border-left: 4px solid; }
+  .sevCard.HIGH { border-color: var(--red); background: var(--red-bg); }
+  .sevCard.MEDIUM { border-color: #d4820a; background: var(--amber-bg); }
+  .sevCard.LOW { border-color: var(--green); background: var(--green-bg); }
+  .sevBadge { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.1em; padding: 2px 8px; margin-bottom: 6px; display: inline-block; }
+  .sevBadge.HIGH { background: var(--red); color: #fff; }
+  .sevBadge.MEDIUM { background: #d4820a; color: #fff; }
+  .sevBadge.LOW { background: var(--green); color: #fff; }
+
+  /* Chat panel */
+  .chatWrap { display: flex; flex-direction: column; height: calc(100vh - 62px - 45px); }
+  .chatMessages { flex: 1; overflow-y: auto; padding: 20px 28px; display: flex; flex-direction: column; gap: 14px; }
+  .chatMsg { max-width: 85%; }
+  .chatMsg.user { align-self: flex-end; }
+  .chatMsg.ai { align-self: flex-start; }
+  .chatBubble { padding: 12px 16px; font-size: 14px; line-height: 1.7; }
+  .chatMsg.user .chatBubble { background: var(--ink); color: #fff; font-family: 'IBM Plex Sans', sans-serif; }
+  .chatMsg.ai .chatBubble { background: var(--cream); border: 1px solid var(--border); color: var(--ink); }
+  .chatMsg.ai .chatBubble .mdBody { font-size: 14px; }
+  .chatSender { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .chatInput { display: flex; gap: 0; border-top: 1px solid var(--border); background: var(--parchment); padding: 12px 20px; gap: 10px; }
+  .chatInput input { flex: 1; border: 1px solid var(--border); background: var(--cream); padding: 10px 14px; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; color: var(--ink); outline: none; }
+  .chatInput input:focus { border-color: var(--gold); }
+  .chatSendBtn { padding: 10px 20px; background: var(--ink); color: #fff; border: none; font-family: 'IBM Plex Mono', monospace; font-size: 12px; cursor: pointer; letter-spacing: 0.06em; transition: background 0.15s; }
+  .chatSendBtn:hover:not(:disabled) { background: var(--ink2); }
+  .chatSendBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Full report */
+  .fullSection { margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+  .fullSection:last-child { border-bottom: none; }
+  .fullSectionTitle { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--ink); margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+  .fullSectionIcon { font-size: 18px; }
+
+  /* Error */
+  .errBox { background: var(--red-bg); border: 1px solid var(--red-border); padding: 18px 22px; color: var(--red); font-size: 14px; line-height: 1.7; margin-top: 20px; }
+  .errBox strong { display: block; font-size: 15px; margin-bottom: 6px; }
+
+  /* PDF export area */
+  #pdfContent { display: none; }
 
   input[type="file"] { display: none; }
-  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* RTL support for Arabic */
+  .rtl { direction: rtl; text-align: right; font-family: 'IBM Plex Sans', sans-serif; }
 </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <div class="header">
-  <div class="header-left">
-    <div class="logo-mark">⚖</div>
+  <div class="hLeft">
+    <div class="logoMark">⚖</div>
     <div>
-      <div class="logo-text">Lexis Intelligence</div>
-      <div class="logo-sub">Legal Document Analyzer</div>
+      <div class="logoText">Lexis Intelligence</div>
+      <div class="logoSub">Legal Document Analyzer v2</div>
     </div>
   </div>
-  <div class="status-pill" id="statusPill">● READY</div>
+  <div class="hRight">
+    <div class="langToggle">
+      <button class="langBtn on" onclick="setLang('en',this)">EN</button>
+      <button class="langBtn" onclick="setLang('ar',this)">AR</button>
+      <button class="langBtn" onclick="setLang('fr',this)">FR</button>
+    </div>
+    <div class="statusPill" id="statusPill">● READY</div>
+  </div>
 </div>
 
 <div class="layout">
+
+  <!-- SIDEBAR -->
   <div class="sidebar">
 
     <div>
-      <div class="section-label">1 — Document</div>
-      <div class="drop-zone" id="dropZone"
-           onclick="document.getElementById('fileInput').click()"
-           ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
-        <div class="drop-icon" id="dropIcon">📄</div>
-        <div class="drop-main" id="dropMain">Click to upload</div>
-        <div class="drop-sub" id="dropSub">PDF, TXT, MD, or CSV</div>
-        <div class="drop-filename" id="dropFilename"></div>
+      <div class="sLabel">1 — Document</div>
+      <div class="dropZone" id="dropZone"
+           onclick="document.getElementById('fi').click()"
+           ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)">
+        <div class="dIcon" id="dIcon">📄</div>
+        <div class="dMain" id="dMain">Click to upload</div>
+        <div class="dSub" id="dSub">PDF, TXT, MD, or CSV</div>
+        <div class="dName" id="dName"></div>
       </div>
-      <input type="file" id="fileInput" accept=".pdf,.txt,.md,.csv" onchange="handleFile(this.files[0])">
+      <input type="file" id="fi" accept=".pdf,.txt,.md,.csv" onchange="handleFile(this.files[0])">
     </div>
 
     <div>
-      <div class="section-label">2 — Analysis Mode</div>
-      <div class="mode-grid">
-        <button class="mode-btn active" data-mode="summary" onclick="pickMode(this)"><span class="mi">📋</span><span class="ml">Plain Summary</span></button>
-        <button class="mode-btn" data-mode="risks" onclick="pickMode(this)"><span class="mi">🚨</span><span class="ml">Risks & Red Flags</span></button>
-        <button class="mode-btn" data-mode="dates" onclick="pickMode(this)"><span class="mi">📅</span><span class="ml">Dates & Deadlines</span></button>
-        <button class="mode-btn" data-mode="clauses" onclick="pickMode(this)"><span class="mi">🔍</span><span class="ml">Clause Analysis</span></button>
-        <button class="mode-btn" data-mode="definitions" onclick="pickMode(this)"><span class="mi">📖</span><span class="ml">Definitions & Refs</span></button>
-        <button class="mode-btn" data-mode="compliance" onclick="pickMode(this)"><span class="mi">✅</span><span class="ml">Compliance Check</span></button>
-        <button class="mode-btn" data-mode="obligations" onclick="pickMode(this)"><span class="mi">⚡</span><span class="ml">Rights & Obligations</span></button>
-        <button class="mode-btn" data-mode="custom" onclick="pickMode(this)"><span class="mi">💬</span><span class="ml">Ask Anything</span></button>
+      <div class="sLabel">2 — Analysis Mode</div>
+      <div class="modeGrid">
+        <button class="modeBtn on" data-mode="summary" onclick="pickMode(this)"><span class="mi">📋</span><span class="ml">Plain Summary</span></button>
+        <button class="modeBtn" data-mode="risks" onclick="pickMode(this)"><span class="mi">🚨</span><span class="ml">Risks & Red Flags</span></button>
+        <button class="modeBtn" data-mode="dates" onclick="pickMode(this)"><span class="mi">📅</span><span class="ml">Dates & Deadlines</span></button>
+        <button class="modeBtn" data-mode="clauses" onclick="pickMode(this)"><span class="mi">🔍</span><span class="ml">Clause Analysis</span></button>
+        <button class="modeBtn" data-mode="definitions" onclick="pickMode(this)"><span class="mi">📖</span><span class="ml">Definitions & Refs</span></button>
+        <button class="modeBtn" data-mode="compliance" onclick="pickMode(this)"><span class="mi">✅</span><span class="ml">Compliance Check</span></button>
+        <button class="modeBtn" data-mode="obligations" onclick="pickMode(this)"><span class="mi">⚡</span><span class="ml">Rights & Obligations</span></button>
+        <button class="modeBtn" data-mode="custom" onclick="pickMode(this)"><span class="mi">💬</span><span class="ml">Ask Anything</span></button>
       </div>
     </div>
 
-    <div class="custom-box" id="customBox">
-      <div class="section-label">Your Question</div>
-      <textarea class="custom-ta" id="customQ" placeholder="e.g. What are the termination conditions? Is there a non-compete clause? Who bears liability?"></textarea>
+    <div class="customBox" id="customBox">
+      <div class="sLabel">Your Question</div>
+      <textarea class="customTa" id="customQ" placeholder="e.g. What are the termination conditions? Who bears liability?"></textarea>
     </div>
 
-    <button class="run-btn" id="runBtn" onclick="analyze()">Analyze Document →</button>
+    <button class="runBtn" id="runBtn" onclick="analyze()">Analyze Document →</button>
+
+    <div>
+      <div class="sLabel">Full Report</div>
+      <button class="fullBtn" id="fullBtn" onclick="runFullAnalysis()">⚡ Run All 8 Analyses</button>
+    </div>
 
     <div class="disclaimer">
       ⚠ For informational purposes only.<br>
       Not a substitute for qualified legal counsel.<br><br>
-      Documents are sent securely to Anthropic's API and are not stored.
+      Documents are processed securely. Not stored.
     </div>
 
   </div>
 
-  <div class="main" id="mainPanel">
-    <div class="empty-state">
-      <div class="empty-glyph">§</div>
-      <div class="empty-label">Upload a legal document<br>Choose an analysis mode<br>Click Analyze Document</div>
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- Tab bar -->
+    <div class="tabBar">
+      <button class="tab on" data-tab="analysis" onclick="switchTab('analysis',this)">Analysis</button>
+      <button class="tab" data-tab="chat" onclick="switchTab('chat',this)">Follow-up Chat</button>
+      <button class="tab" data-tab="report" onclick="switchTab('report',this)">Full Report</button>
+    </div>
+
+    <div class="panels">
+
+      <!-- ANALYSIS PANEL -->
+      <div class="panel on" id="panel-analysis">
+        <div class="emptyState" id="emptyState">
+          <div class="emptyGlyph">§</div>
+          <div class="emptyLabel">Upload a legal document<br>Choose an analysis mode<br>Click Analyze Document</div>
+        </div>
+      </div>
+
+      <!-- CHAT PANEL -->
+      <div class="panel" id="panel-chat" style="padding:0">
+        <div class="chatWrap">
+          <div class="chatMessages" id="chatMessages">
+            <div class="emptyState" style="min-height:300px">
+              <div class="emptyGlyph" style="font-size:40px">💬</div>
+              <div class="emptyLabel">Run an analysis first, then ask<br>follow-up questions about your document</div>
+            </div>
+          </div>
+          <div class="chatInput">
+            <input type="text" id="chatQ" placeholder="Ask a follow-up question about this document…" onkeydown="if(event.key==='Enter')sendChat()">
+            <button class="chatSendBtn" id="chatSendBtn" onclick="sendChat()">Send →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FULL REPORT PANEL -->
+      <div class="panel" id="panel-report">
+        <div class="emptyState" id="reportEmpty">
+          <div class="emptyGlyph" style="font-size:40px">📑</div>
+          <div class="emptyLabel">Click "Run All 8 Analyses" to generate<br>a complete legal report</div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
-<script>
-  let fileB64 = null, fileMime = 'text/plain', fileName = '', mode = 'summary';
-  let lastResult = '';
+<!-- Hidden PDF content -->
+<div id="pdfContent"></div>
 
+<script>
+  // ── STATE ──
+  let fileB64 = null, fileMime = 'text/plain', fileName = '', mode = 'summary';
+  let currentLang = 'en';
+  let lastAnalysisText = '';
+  let chatHistory = [];
+  let documentContext = '';
+
+  // ── PROMPTS ──
   const PROMPTS = {
-    summary: `You are a senior legal analyst. Summarize this legal document in plain language a non-lawyer can understand.\n\nCover:\n1. DOCUMENT TYPE — What kind of document is this?\n2. PARTIES — Who are the parties and what are their roles?\n3. CORE PURPOSE — What does this document do in plain terms?\n4. KEY TERMS — The 6 most important terms or conditions\n5. OBLIGATIONS — What must each party do?\n6. VERDICT — Is this document standard, favorable, or concerning? Why?`,
-    risks: `You are a legal risk analyst. Identify every risk and red flag in this document.\n\nFor each risk:\n[SEVERITY: HIGH / MEDIUM / LOW]\nRisk title\nClause reference\nPlain-language explanation\nWhy it matters\nQuestion to ask a lawyer\n\nOrder from most to least severe. End with a RISK SUMMARY: overall risk level and top recommendation.`,
-    dates: `You are a legal deadline specialist. Extract every date, deadline, and timeframe.\n\nFor each:\nDATE/TIMEFRAME: [exact date or period]\nACTION REQUIRED: [what must happen]\nRESPONSIBLE PARTY: [who]\nCONSEQUENCE IF MISSED: [what happens]\nPRIORITY: [Critical / Important / Advisory]\n\nAlso flag: MISSING DATES and identify the 3 most critical deadlines.`,
-    clauses: `You are a contract law expert. Analyze this document clause by clause.\n\nFor each clause:\nCLAUSE NAME\nPlain-language explanation\nClassification: Standard / Favorable / Unfavorable / Unusual\nConcerns or red flags\nIndustry standard comparison\n\nEnd with a CLAUSE SCORECARD showing counts of each classification.`,
-    definitions: `You are a legal language specialist.\n\n1. DEFINED TERMS — Every defined/capitalized term and its meaning\n2. UNDEFINED IMPORTANT TERMS — Terms used but not defined\n3. AMBIGUOUS LANGUAGE — Phrases open to multiple interpretations and the risks created\n4. CROSS-REFERENCES — How clauses reference each other, any conflicts\n5. INCONSISTENCIES — Terms used differently in different places\n6. RECOMMENDATIONS — What should be added, clarified, or amended`,
-    compliance: `You are a regulatory compliance expert.\n\n1. APPLICABLE LAW — What laws and regulations govern this document?\n2. COMPLIANCE GAPS — Missing required clauses or disclosures\n3. REGULATORY RED FLAGS — Provisions that may conflict with regulations\n4. JURISDICTION — Governing law clause analysis\n5. DATA PRIVACY — Any GDPR, data handling, or consent issues\n6. RECOMMENDATIONS — Prioritized list of changes needed`,
-    obligations: `You are a legal obligations analyst. For EACH PARTY:\n\nPARTY NAME:\nOBLIGATIONS (must do): [obligation — due when — consequence if breached]\nRIGHTS (entitled to): [right — conditions — duration]\nRESTRICTIONS (cannot do): [restriction — scope — duration]\n\nThen provide:\nMUTUAL OBLIGATIONS\nCONDITIONAL OBLIGATIONS\nIMBALANCES — anything one-sided or disproportionate\nENFORCEMENT — remedies specified for breach`,
+    summary: `You are a senior legal analyst. Analyze this legal document and provide a comprehensive structured summary.
+
+Use markdown formatting with headers. Cover:
+
+## Document Type
+What kind of document is this?
+
+## Parties Involved
+Who are the parties and what are their roles?
+
+## Core Purpose
+What does this document do?
+
+## Key Terms & Conditions
+List the 6 most important terms. Use bullet points.
+
+## Obligations
+What must each party do? Use a table or bullet points per party.
+
+## Overall Verdict
+Is this document **standard**, **favorable**, or **concerning**? Why? Use bold for the verdict word.`,
+
+    risks: `You are a legal risk analyst. Identify every risk and red flag in this document.
+
+Use this EXACT format for each risk so it can be color-coded:
+
+### [HIGH] Risk Title Here
+**Clause:** Section X.X
+**Explanation:** Plain language explanation of the risk.
+**Why it matters:** Why this is dangerous.
+**Ask a lawyer:** What question to raise with legal counsel.
+
+---
+
+### [MEDIUM] Risk Title Here
+**Clause:** Section X.X
+**Explanation:** Plain language explanation.
+**Why it matters:** Why this matters.
+**Ask a lawyer:** Question for legal counsel.
+
+---
+
+### [LOW] Risk Title Here
+...
+
+Order from most to least severe.
+
+## Risk Summary
+Overall risk level: **HIGH / MEDIUM / LOW**
+High risks found: X
+Medium risks found: X
+Low risks found: X
+Top recommendation: ...`,
+
+    dates: `You are a legal deadline specialist. Extract every date, deadline, and timeframe.
+
+## Key Dates & Deadlines
+
+For each, use this format:
+
+### [CRITICAL] Date or Timeframe
+**Action required:** What must happen
+**Responsible party:** Who
+**Consequence if missed:** What happens
+
+---
+
+### [IMPORTANT] Date or Timeframe
+...
+
+## Missing Dates
+Any dates that should be present but aren't.
+
+## Critical Path
+The 3 most important deadlines and why.`,
+
+    clauses: `You are a contract law expert. Analyze this document clause by clause using markdown.
+
+For each major clause use this format:
+
+### Clause Name
+**Classification:** Standard / Favorable / Unfavorable / Unusual
+**Explanation:** Plain language explanation.
+**Concerns:** Any red flags or issues.
+**Industry standard:** Is this typical?
+
+---
+
+## Clause Scorecard
+| Classification | Count |
+|---|---|
+| Standard | X |
+| Favorable | X |
+| Unfavorable | X |
+| Unusual | X |`,
+
+    definitions: `You are a legal language specialist. Analyze language and definitions using markdown.
+
+## Defined Terms
+| Term | Definition | Concerns |
+|---|---|---|
+| Term 1 | Definition | Any issue |
+
+## Undefined but Important Terms
+Terms used but not defined that should be.
+
+## Ambiguous Language
+### Ambiguous Phrase
+**Found in:** Clause X
+**Possible interpretations:** 
+- Interpretation 1
+- Interpretation 2
+**Risk created:** ...
+
+## Cross-References & Dependencies
+How clauses reference each other.
+
+## Inconsistencies
+Terms used differently in different places.
+
+## Recommendations
+What should be added, clarified, or amended.`,
+
+    compliance: `You are a regulatory compliance expert. Review using markdown.
+
+## Applicable Laws & Regulations
+What laws govern this document?
+
+## Compliance Gaps
+| Missing Provision | Severity | Recommendation |
+|---|---|---|
+| Gap 1 | High/Med/Low | What to add |
+
+## Regulatory Red Flags
+Any provisions that may conflict with regulations.
+
+## Jurisdiction Analysis
+Governing law clause — is it appropriate?
+
+## Data Privacy
+Any GDPR, data handling, or consent issues.
+
+## Recommendations
+Prioritized list of required changes.`,
+
+    obligations: `You are a legal obligations analyst. Map all rights, obligations and restrictions using markdown.
+
+For each party identified:
+
+## Party Name
+
+### Obligations (Must Do)
+| Obligation | Due By | Consequence if Breached |
+|---|---|---|
+| ... | ... | ... |
+
+### Rights (Entitled To)
+- Right 1 — conditions — duration
+- Right 2 — conditions — duration
+
+### Restrictions (Cannot Do)
+- Restriction 1 — scope — duration
+
+---
+
+## Mutual Obligations
+Things both parties must do.
+
+## Imbalances
+Anything one-sided or disproportionate — **flag these clearly**.
+
+## Enforcement
+Remedies specified for breach.`,
+
     custom: null
+  };
+
+  const LANG_SUFFIX = {
+    en: '',
+    ar: '\n\nIMPORTANT: Provide your ENTIRE response in Arabic language. Use Arabic script throughout.',
+    fr: '\n\nIMPORTANT: Provide your ENTIRE response in French language.'
   };
 
   const LABELS = {
@@ -185,6 +511,12 @@
     obligations:'Rights & Obligations Map', custom:'Custom Analysis'
   };
 
+  const MODE_ICONS = {
+    summary:'📋', risks:'🚨', dates:'📅', clauses:'🔍',
+    definitions:'📖', compliance:'✅', obligations:'⚡', custom:'💬'
+  };
+
+  // ── FILE HANDLING ──
   function onDragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('drag'); }
   function onDragLeave() { document.getElementById('dropZone').classList.remove('drag'); }
   function onDrop(e) { e.preventDefault(); onDragLeave(); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); }
@@ -196,110 +528,362 @@
     const r = new FileReader();
     r.onload = e => {
       fileB64 = e.target.result.split(',')[1];
-      const dz = document.getElementById('dropZone');
-      dz.classList.add('loaded');
-      document.getElementById('dropIcon').textContent = '✓';
-      document.getElementById('dropMain').textContent = 'Document loaded';
-      document.getElementById('dropSub').textContent = 'Ready to analyze';
-      document.getElementById('dropFilename').textContent = file.name;
+      documentContext = '';
+      chatHistory = [];
+      document.getElementById('dropZone').classList.add('loaded');
+      document.getElementById('dIcon').textContent = '✓';
+      document.getElementById('dMain').textContent = 'Document loaded';
+      document.getElementById('dSub').textContent = 'Ready to analyze';
+      document.getElementById('dName').textContent = file.name;
     };
     r.readAsDataURL(file);
   }
 
+  // ── MODE ──
   function pickMode(btn) {
-    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    document.querySelectorAll('.modeBtn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
     mode = btn.dataset.mode;
     document.getElementById('customBox').classList.toggle('on', mode === 'custom');
   }
 
+  // ── LANGUAGE ──
+  function setLang(lang, btn) {
+    currentLang = lang;
+    document.querySelectorAll('.langBtn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+  }
+
+  // ── TABS ──
+  function switchTab(tab, btn) {
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+    btn.classList.add('on');
+    document.getElementById('panel-' + tab).classList.add('on');
+  }
+
+  // ── API CALL ──
+  async function callAPI(prompt, includeDoc = true) {
+    const content = [];
+    if (includeDoc && fileB64) {
+      content.push({ type: 'document', source: { type: 'base64', media_type: fileMime, data: fileB64 } });
+    }
+    content.push({ type: 'text', text: prompt });
+
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        system: 'You are Lexis, an expert legal document analyst with 20+ years of experience across contracts, NDAs, employment law, real estate, compliance, regulations, and judicial decisions. Always use markdown formatting in your responses for clear structure. Be thorough and precise.',
+        messages: chatHistory.length > 0 && !includeDoc ? chatHistory : [{ role: 'user', content }]
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error?.message || `Error ${res.status}`);
+    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+    if (!text) throw new Error('Empty response. Please try again.');
+    return { text, tokens: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0) };
+  }
+
+  // ── SINGLE ANALYSIS ──
   async function analyze() {
-    if (!fileB64) { showError('No Document', 'Please upload a document first.'); return; }
-    const prompt = mode === 'custom' ? document.getElementById('customQ').value.trim() : PROMPTS[mode];
-    if (!prompt) { showError('No Question', 'Please type your question.'); return; }
+    if (!fileB64) { showAnalysisError('No Document', 'Please upload a document first.'); return; }
+    const basePrompt = mode === 'custom' ? document.getElementById('customQ').value.trim() : PROMPTS[mode];
+    if (!basePrompt) { showAnalysisError('No Question', 'Please type your question.'); return; }
+    const prompt = basePrompt + LANG_SUFFIX[currentLang];
 
     const btn = document.getElementById('runBtn');
     btn.disabled = true; btn.textContent = 'Analyzing…';
-    document.getElementById('statusPill').textContent = '● ANALYZING';
-    showLoading();
+    setStatus('ANALYZING');
+    switchTab('analysis', document.querySelector('.tab'));
 
+    showLoadingPanel('panel-analysis', LABELS[mode]);
     const t0 = Date.now();
+
     try {
-      // Calls YOUR server, not Anthropic directly — that's the fix
-      const res = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 2000,
-          system: 'You are Lexis, an expert legal document analyst with 20+ years of experience across contracts, NDAs, employment law, real estate, compliance, regulations, and judicial decisions. Be thorough, precise, and always explain legal language in plain terms.',
-          messages: [{
-            role: 'user',
-            content: [
-              { type: 'document', source: { type: 'base64', media_type: fileMime, data: fileB64 } },
-              { type: 'text', text: prompt }
-            ]
-          }]
-        })
-      });
+      const { text, tokens } = await callAPI(prompt);
+      lastAnalysisText = text;
+      documentContext = text;
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error?.message || `Error ${res.status}`);
-      const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
-      if (!text) throw new Error('Empty response. Please try again.');
+      // Seed chat history with document + first analysis
+      chatHistory = [
+        { role: 'user', content: [
+          { type: 'document', source: { type: 'base64', media_type: fileMime, data: fileB64 } },
+          { type: 'text', text: prompt }
+        ]},
+        { role: 'assistant', content: text }
+      ];
 
-      lastResult = text;
       const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
-      const tokens = ((data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0)).toLocaleString();
-      showResult(text, elapsed, tokens);
-      document.getElementById('statusPill').textContent = '● READY';
+      renderAnalysis('panel-analysis', LABELS[mode], text, elapsed, tokens);
+      setStatus('READY');
+
+      // Enable chat
+      document.getElementById('chatMessages').innerHTML = `
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);text-align:center;padding:12px;letter-spacing:0.08em">
+          ANALYSIS COMPLETE — ASK FOLLOW-UP QUESTIONS BELOW
+        </div>`;
 
     } catch (err) {
-      showError('Analysis Failed', err.message);
-      document.getElementById('statusPill').textContent = '● ERROR';
+      showAnalysisError('Analysis Failed', err.message);
+      setStatus('ERROR');
     } finally {
       btn.disabled = false; btn.textContent = 'Analyze Document →';
     }
   }
 
-  function showLoading() {
-    document.getElementById('mainPanel').innerHTML = `
-      <div class="loading-state">
-        <div class="loading-mode">${LABELS[mode]}</div>
-        <div class="loading-bar"><div class="loading-fill"></div></div>
-        <div class="loading-sub">Reading your document… 15–30 seconds</div>
+  // ── FULL REPORT ──
+  async function runFullAnalysis() {
+    if (!fileB64) { alert('Please upload a document first.'); return; }
+
+    const modes = ['summary', 'risks', 'dates', 'clauses', 'compliance', 'obligations'];
+    const btn = document.getElementById('fullBtn');
+    btn.disabled = true;
+    setStatus('FULL REPORT');
+
+    switchTab('report', document.querySelectorAll('.tab')[2]);
+
+    const reportPanel = document.getElementById('panel-report');
+    reportPanel.innerHTML = `<div class="loadState">
+      <div class="loadMode">Full Document Analysis</div>
+      <div class="loadBar"><div class="loadFill"></div></div>
+      <div class="loadSub" id="fullLoadSub">Starting analysis…</div>
+      <div class="loadProgress" id="fullProgress">0 / ${modes.length}</div>
+    </div>`;
+
+    const results = {};
+    for (let i = 0; i < modes.length; i++) {
+      const m = modes[i];
+      document.getElementById('fullLoadSub').textContent = `Analyzing: ${LABELS[m]}…`;
+      document.getElementById('fullProgress').textContent = `${i} / ${modes.length}`;
+      try {
+        const prompt = PROMPTS[m] + LANG_SUFFIX[currentLang];
+        const { text } = await callAPI(prompt);
+        results[m] = text;
+      } catch (err) {
+        results[m] = `Error: ${err.message}`;
+      }
+    }
+
+    // Render full report
+    let reportHTML = `
+      <div class="resultHdr">
+        <div>
+          <div class="resultTitle">Complete Legal Analysis Report</div>
+          <div class="resultFile">${escHtml(fileName)}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="resultMeta">${new Date().toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'})}<br>Lexis Intelligence v2</div>
+          <div class="resultActions">
+            <button class="actBtn gold" onclick="exportPDF()">⬇ Export PDF</button>
+            <button class="actBtn" onclick="copyFullReport()">Copy All</button>
+          </div>
+        </div>
+      </div>`;
+
+    modes.forEach(m => {
+      if (results[m]) {
+        reportHTML += `
+          <div class="fullSection">
+            <div class="fullSectionTitle"><span class="fullSectionIcon">${MODE_ICONS[m]}</span>${LABELS[m]}</div>
+            <div class="mdBody ${currentLang === 'ar' ? 'rtl' : ''}">${renderMarkdown(results[m])}</div>
+          </div>`;
+      }
+    });
+
+    reportPanel.innerHTML = reportHTML;
+
+    // Store for PDF/copy
+    window._fullReport = results;
+    setStatus('READY');
+    btn.disabled = false;
+  }
+
+  // ── FOLLOW-UP CHAT ──
+  async function sendChat() {
+    if (!fileB64) { alert('Please upload a document and run an analysis first.'); return; }
+    const q = document.getElementById('chatQ').value.trim();
+    if (!q) return;
+
+    const sendBtn = document.getElementById('chatSendBtn');
+    sendBtn.disabled = true;
+    document.getElementById('chatQ').value = '';
+
+    const msgs = document.getElementById('chatMessages');
+
+    // Add user message
+    msgs.innerHTML += `<div class="chatMsg user"><div class="chatSender">You</div><div class="chatBubble">${escHtml(q)}</div></div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+
+    // Add to history
+    chatHistory.push({ role: 'user', content: q });
+
+    // Thinking indicator
+    const thinkId = 'think-' + Date.now();
+    msgs.innerHTML += `<div class="chatMsg ai" id="${thinkId}"><div class="chatSender">Lexis</div><div class="chatBubble" style="color:var(--muted);font-style:italic">Thinking…</div></div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+
+    try {
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: 'You are Lexis, an expert legal document analyst. You are answering follow-up questions about a legal document that has already been analyzed. Be concise, precise, and use markdown formatting.',
+          messages: chatHistory
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error?.message || 'Error');
+      const reply = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+
+      chatHistory.push({ role: 'assistant', content: reply });
+
+      document.getElementById(thinkId).innerHTML = `
+        <div class="chatSender">Lexis</div>
+        <div class="chatBubble"><div class="mdBody ${currentLang === 'ar' ? 'rtl' : ''}">${renderMarkdown(reply)}</div></div>`;
+
+    } catch (err) {
+      document.getElementById(thinkId).innerHTML = `
+        <div class="chatSender">Lexis</div>
+        <div class="chatBubble" style="color:var(--red)">Error: ${escHtml(err.message)}</div>`;
+    } finally {
+      sendBtn.disabled = false;
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+  }
+
+  // ── RENDER ──
+  function renderMarkdown(text) {
+    let html = marked.parse(text);
+    // Color-code severity cards
+    html = html.replace(/<h3>\[HIGH\](.*?)<\/h3>/g, '<div class="sevCard HIGH"><span class="sevBadge HIGH">HIGH</span><strong>$1</strong>');
+    html = html.replace(/<h3>\[MEDIUM\](.*?)<\/h3>/g, '<div class="sevCard MEDIUM"><span class="sevBadge MEDIUM">MEDIUM</span><strong>$1</strong>');
+    html = html.replace(/<h3>\[LOW\](.*?)<\/h3>/g, '<div class="sevCard LOW"><span class="sevBadge LOW">LOW</span><strong>$1</strong>');
+    html = html.replace(/<h3>\[CRITICAL\](.*?)<\/h3>/g, '<div class="sevCard HIGH"><span class="sevBadge HIGH">CRITICAL</span><strong>$1</strong>');
+    html = html.replace(/<h3>\[IMPORTANT\](.*?)<\/h3>/g, '<div class="sevCard MEDIUM"><span class="sevBadge MEDIUM">IMPORTANT</span><strong>$1</strong>');
+    // Close open severity cards before next h3 or h2
+    html = html.replace(/(<div class="sevCard[^"]*">[^]*?)(?=<div class="sevCard|<h2>|$)/g, '$1</div>');
+    return html;
+  }
+
+  function extractRiskScore(text) {
+    const highCount = (text.match(/\[HIGH\]/g) || []).length + (text.match(/\*\*HIGH\*\*/g) || []).length;
+    const medCount = (text.match(/\[MEDIUM\]/g) || []).length + (text.match(/\*\*MEDIUM\*\*/g) || []).length;
+    const lowCount = (text.match(/\[LOW\]/g) || []).length + (text.match(/\*\*LOW\*\*/g) || []).length;
+    const overall = text.match(/Overall risk level:\s*\*\*(HIGH|MEDIUM|LOW)\*\*/i);
+    return { highCount, medCount, lowCount, overall: overall ? overall[1] : (highCount > 0 ? 'HIGH' : medCount > 0 ? 'MEDIUM' : 'LOW') };
+  }
+
+  function renderAnalysis(panelId, title, text, elapsed, tokens) {
+    const panel = document.getElementById(panelId);
+    const isRisk = mode === 'risks';
+    const isAr = currentLang === 'ar';
+
+    let riskHTML = '';
+    if (isRisk) {
+      const { highCount, medCount, lowCount, overall } = extractRiskScore(text);
+      const score = overall === 'HIGH' ? 85 : overall === 'MEDIUM' ? 50 : 20;
+      const cls = overall.toLowerCase();
+      riskHTML = `<div class="riskScore">
+        <div>
+          <div class="riskLabel ${cls}">● OVERALL: ${overall} RISK</div>
+          <div class="riskCount">${highCount} HIGH · ${medCount} MEDIUM · ${lowCount} LOW</div>
+        </div>
+        <div class="riskMeter" style="flex:1">
+          <div class="riskFill ${cls}" style="width:0%" id="riskBar"></div>
+        </div>
+      </div>`;
+      setTimeout(() => { const b = document.getElementById('riskBar'); if(b) b.style.width = score + '%'; }, 100);
+    }
+
+    panel.innerHTML = `
+      <div class="resultHdr">
+        <div>
+          <div class="resultTitle">${title}</div>
+          <div class="resultFile">${escHtml(fileName)}</div>
+        </div>
+        <div>
+          <div class="resultMeta">${elapsed}s · ${tokens.toLocaleString()} tokens</div>
+          <div class="resultActions">
+            <button class="actBtn gold" onclick="exportSinglePDF()">⬇ PDF</button>
+            <button class="actBtn" onclick="copyText()">Copy</button>
+          </div>
+        </div>
+      </div>
+      ${riskHTML}
+      <div class="mdBody ${isAr ? 'rtl' : ''}">${renderMarkdown(text)}</div>`;
+  }
+
+  function showLoadingPanel(panelId, label) {
+    document.getElementById(panelId).innerHTML = `
+      <div class="loadState">
+        <div class="loadMode">${label}</div>
+        <div class="loadBar"><div class="loadFill"></div></div>
+        <div class="loadSub">Reading your document… 15–30 seconds</div>
       </div>`;
   }
 
-  function showResult(text, elapsed, tokens) {
-    document.getElementById('mainPanel').innerHTML = `
-      <div class="result-header">
-        <div>
-          <div class="result-title">${LABELS[mode]}</div>
-          <div class="result-file">${esc(fileName)}</div>
-        </div>
-        <div class="result-meta">${elapsed}s · ${tokens} tokens<br>claude-sonnet-4</div>
-      </div>
-      <div class="result-body">${esc(text)}</div>
-      <button class="copy-btn" onclick="copyResult()">Copy to clipboard</button>`;
+  function showAnalysisError(title, msg) {
+    document.getElementById('panel-analysis').innerHTML = `
+      <div class="emptyState" style="opacity:0.3;min-height:200px"><div class="emptyGlyph">§</div></div>
+      <div class="errBox"><strong>⚠ ${escHtml(title)}</strong>${escHtml(msg)}</div>`;
   }
 
-  function showError(title, msg) {
-    document.getElementById('mainPanel').innerHTML = `
-      <div class="empty-state" style="opacity:0.3; min-height:200px">
-        <div class="empty-glyph">§</div>
-      </div>
-      <div class="error-box"><strong>⚠ ${esc(title)}</strong>${esc(msg)}</div>`;
+  function setStatus(s) {
+    document.getElementById('statusPill').textContent = '● ' + s;
   }
 
-  function copyResult() {
-    navigator.clipboard.writeText(lastResult).then(() => {
-      const b = document.querySelector('.copy-btn');
-      if (b) { b.textContent = '✓ Copied!'; setTimeout(() => b.textContent = 'Copy to clipboard', 2000); }
-    });
+  // ── EXPORT ──
+  function exportSinglePDF() {
+    const content = document.querySelector('#panel-analysis .mdBody');
+    if (!content) return;
+    const opt = {
+      margin: [15, 15],
+      filename: `Lexis-${mode}-${fileName.replace(/\.[^.]+$/,'')}.pdf`,
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'font-family:Georgia,serif;font-size:13px;line-height:1.7;color:#1a1a2e;padding:10px';
+    wrapper.innerHTML = `<h1 style="font-size:20px;border-bottom:2px solid #c9a84c;padding-bottom:8px;margin-bottom:16px">Lexis Intelligence — ${LABELS[mode]}</h1><p style="font-size:11px;color:#888;margin-bottom:20px">Document: ${fileName} · ${new Date().toLocaleDateString()}</p>` + content.innerHTML;
+    html2pdf().set(opt).from(wrapper).save();
   }
 
-  function esc(s) {
+  function exportPDF() {
+    const content = document.getElementById('panel-report');
+    if (!content) return;
+    const opt = {
+      margin: [15, 15],
+      filename: `Lexis-FullReport-${fileName.replace(/\.[^.]+$/,'')}.pdf`,
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(content).save();
+  }
+
+  function copyText() {
+    if (lastAnalysisText) {
+      navigator.clipboard.writeText(lastAnalysisText).then(() => {
+        const b = document.querySelector('.actBtn');
+        if (b) { b.textContent = '✓ Copied'; setTimeout(() => b.textContent = 'Copy', 2000); }
+      });
+    }
+  }
+
+  function copyFullReport() {
+    if (window._fullReport) {
+      const all = Object.entries(window._fullReport).map(([k,v]) => `=== ${LABELS[k]} ===\n\n${v}`).join('\n\n\n');
+      navigator.clipboard.writeText(all).then(() => alert('Full report copied to clipboard'));
+    }
+  }
+
+  function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 </script>
