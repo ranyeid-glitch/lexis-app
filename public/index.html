@@ -532,11 +532,11 @@ Top recommendation: One sentence.`,
 
     clauses: `Extract every major clause from this legal document. For each clause provide: the clause name, what it means in plain language, whether it is Standard / Favorable / Unfavorable / Unusual, and any specific concerns.`,
 
-    definitions: `From this legal document extract: all explicitly defined terms and their definitions, any important terms that are used but never defined, any phrases that are ambiguous or could be interpreted in multiple ways, and any inconsistencies in how terms are used throughout the document.`,
+    definitions: `From this legal document list: the top 15 most important defined terms and their definitions, up to 5 undefined but important terms, up to 5 ambiguous phrases with dual interpretations, and any key inconsistencies.`,
 
-    compliance: `Review this legal document for regulatory compliance. Identify: all laws and regulations that apply, any required provisions that are missing, any provisions that may conflict with applicable law, jurisdiction analysis, and data privacy issues.`,
+    compliance: `Review this legal document for compliance. List: the laws and regulations that apply, up to 8 missing required provisions with severity, any provisions conflicting with law, jurisdiction assessment, and data privacy issues.`,
 
-    obligations: `Map every obligation, right, and restriction for each party in this legal document. For each party list what they must do (with deadlines and consequences), what they are entitled to do, and what they cannot do. Then identify any imbalances and what enforcement mechanisms exist.`,
+    obligations: `For each party in this legal document list their top 10 obligations (with deadlines and consequences), top 5 rights, top 5 restrictions. Then note the 3 biggest imbalances and enforcement mechanisms.`,
 
     custom: null
   };
@@ -668,7 +668,7 @@ Top recommendation: One sentence.`,
         const result1 = await callAPI(prompt);
         const template = FORMAT_TEMPLATES[mode];
         // Trim Call 1 output to avoid token overflow in Call 2 (max 6000 chars)
-        const trimmed = result1.text.length > 6000 ? result1.text.substring(0, 6000) + '\n[truncated]' : result1.text;
+        const trimmed = result1.text.length > 4500 ? result1.text.substring(0, 4500) + '\n[truncated for length]' : result1.text;
         const formatPrompt = template + '\n\n' + trimmed;
         const result2 = await callAPI(formatPrompt, false);
         text = result2.text;
@@ -740,8 +740,8 @@ Top recommendation: One sentence.`,
         const twoCallModes = ['summary','dates','clauses','definitions','compliance','obligations'];
         if (twoCallModes.includes(m)) {
           const r1 = await callAPI(prompt);
-          const formatPrompt = FORMAT_TEMPLATES[m] + '\n\n' + r1.text;
-          const r2 = await callAPI(formatPrompt, false);
+          const trimmedR1 = r1.text.length > 4500 ? r1.text.substring(0, 4500) + '\n[truncated]' : r1.text;
+          const formatPrompt = FORMAT_TEMPLATES[m] + '\n\n' + trimmedR1; r2 = await callAPI(formatPrompt, false);
           results[m] = r2.text;
         } else {
           const { text } = await callAPI(prompt);
