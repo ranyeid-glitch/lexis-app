@@ -3,202 +3,139 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lexis Intelligence v2 — Legal Document Analyzer</title>
+<title>Lexis Intelligence — Legal Document Analyzer</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
-  :root {
-    --ink: #1a1a2e; --ink2: #2d2d4a; --gold: #c9a84c; --gold-light: #f0dfa0;
-    --cream: #faf8f3; --parchment: #f2ede0; --border: #ddd8c8; --muted: #8a8070;
-    --red: #b04040; --red-bg: #fdf0f0; --red-border: #e8c0c0;
-    --green: #2d6a4f; --green-bg: #f0f7f4; --green-border: #b0d4c0;
-    --amber: #92600a; --amber-bg: #fdf6e3; --amber-border: #e8d090;
-    --blue: #1e4a7a; --blue-bg: #f0f4fa; --blue-border: #b0c8e8;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--cream); font-family: 'IBM Plex Sans', sans-serif; color: var(--ink); min-height: 100vh; }
-
-  /* ── HEADER ── */
-  .header {
-    background: var(--ink); padding: 0 28px; height: 62px;
-    display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 200;
-  }
-  .hLeft { display: flex; align-items: center; gap: 12px; }
-  .logoMark { width: 36px; height: 36px; border: 1.5px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 18px; }
-  .logoText { font-family: 'Playfair Display', serif; font-size: 18px; color: #fff; }
-  .logoSub { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--gold); letter-spacing: 0.14em; text-transform: uppercase; margin-top: 2px; }
-  .hRight { display: flex; align-items: center; gap: 12px; }
-  .langToggle { display: flex; background: rgba(255,255,255,0.08); border: 1px solid rgba(201,168,76,0.3); overflow: hidden; }
-  .langBtn { padding: 5px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.5); cursor: pointer; background: none; border: none; transition: all 0.15s; }
-  .langBtn.on { background: var(--gold); color: var(--ink); font-weight: 500; }
-  .statusPill { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 4px 12px; border: 1px solid rgba(201,168,76,0.4); color: var(--gold); letter-spacing: 0.06em; }
-
-  /* ── LAYOUT ── */
-  .layout { display: grid; grid-template-columns: 290px 1fr; min-height: calc(100vh - 62px); }
-
-  /* ── SIDEBAR ── */
-  .sidebar { background: var(--parchment); border-right: 1px solid var(--border); padding: 20px 16px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
-  .sLabel { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
-
-  .dropZone { border: 1.5px dashed var(--border); background: var(--cream); padding: 20px 12px; text-align: center; cursor: pointer; transition: all 0.2s; user-select: none; }
-  .dropZone:hover, .dropZone.drag { border-color: var(--gold); background: #fdf9f0; }
-  .dropZone.loaded { border-style: solid; border-color: var(--green); background: var(--green-bg); }
-  .dIcon { font-size: 26px; margin-bottom: 6px; }
-  .dMain { font-size: 13px; font-weight: 500; color: var(--ink); margin-bottom: 2px; }
-  .dSub { font-size: 11px; color: var(--muted); }
-  .dName { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--green); margin-top: 6px; word-break: break-all; display: none; }
-  .dropZone.loaded .dName { display: block; }
-
-  .modeGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-  .modeBtn { padding: 9px 7px; border: 1px solid var(--border); background: var(--cream); cursor: pointer; text-align: left; transition: all 0.15s; font-family: 'IBM Plex Sans', sans-serif; width: 100%; }
-  .modeBtn:hover { border-color: var(--gold); background: #fdf9f0; }
-  .modeBtn.on { border-color: var(--ink); background: var(--ink); color: #fff; }
-  .modeBtn.on .mi { color: var(--gold); }
-  .mi { font-size: 14px; display: block; margin-bottom: 3px; }
-  .ml { font-size: 11px; font-weight: 500; line-height: 1.3; display: block; }
-
-  .fullBtn { width: 100%; padding: 11px; background: var(--ink2); color: var(--gold-light); border: 1px solid var(--gold); font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; cursor: pointer; transition: all 0.2s; text-transform: uppercase; }
-  .fullBtn:hover:not(:disabled) { background: var(--gold); color: var(--ink); }
-  .fullBtn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  .customBox { display: none; }
-  .customBox.on { display: block; }
-  .customTa { width: 100%; border: 1px solid var(--border); background: var(--cream); padding: 9px 11px; font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; color: var(--ink); resize: vertical; min-height: 70px; outline: none; }
-  .customTa:focus { border-color: var(--gold); }
-
-  .runBtn { width: 100%; padding: 14px; background: var(--gold); color: var(--ink); border: none; font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; transition: all 0.2s; }
-  .runBtn:hover:not(:disabled) { background: #b8943e; }
-  .runBtn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  .disclaimer { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); line-height: 1.6; border-top: 1px solid var(--border); padding-top: 12px; }
-
-  /* ── MAIN ── */
-  .main { display: flex; flex-direction: column; overflow: hidden; }
-
-  /* Tab bar */
-  .tabBar { display: flex; border-bottom: 1px solid var(--border); background: var(--parchment); padding: 0 28px; gap: 0; }
-  .tab { padding: 12px 18px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; background: none; border-top: none; border-left: none; border-right: none; text-transform: uppercase; }
-  .tab:hover { color: var(--ink); }
-  .tab.on { color: var(--ink); border-bottom-color: var(--gold); }
-
-  .panels { flex: 1; overflow-y: auto; }
-  .panel { display: none; padding: 28px 32px; }
-  .panel.on { display: block; }
-
-  /* Empty state */
-  .emptyState { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 380px; text-align: center; opacity: 0.35; }
-  .emptyGlyph { font-family: 'Playfair Display', serif; font-size: 72px; color: var(--border); line-height: 1; margin-bottom: 14px; }
-  .emptyLabel { font-size: 14px; color: var(--muted); line-height: 1.8; }
-
-  /* Loading */
-  .loadState { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 380px; gap: 16px; }
-  .loadMode { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
-  .loadBar { width: 200px; height: 2px; background: var(--border); overflow: hidden; }
-  .loadFill { height: 100%; background: var(--gold); animation: sweep 1.5s ease-in-out infinite; }
-  @keyframes sweep { 0%{width:0;margin-left:0} 50%{width:100%;margin-left:0} 100%{width:0;margin-left:100%} }
-  .loadSub { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
-  .loadProgress { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--gold); letter-spacing: 0.06em; }
-
-  /* Result header */
-  .resultHdr { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
-  .resultTitle { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--ink); }
-  .resultFile { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 3px; }
-  .resultMeta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); text-align: right; line-height: 1.8; }
-  .resultActions { display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end; }
-  .actBtn { padding: 5px 12px; border: 1px solid var(--border); background: transparent; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); cursor: pointer; transition: all 0.15s; letter-spacing: 0.06em; text-transform: uppercase; }
-  .actBtn:hover { border-color: var(--ink); color: var(--ink); }
-  .actBtn.gold { border-color: var(--gold); color: var(--amber); }
-  .actBtn.gold:hover { background: var(--gold); color: var(--ink); }
-
-  /* Risk score */
-  .riskScore { display: flex; align-items: center; gap: 16px; padding: 16px 20px; margin-bottom: 20px; border: 1px solid var(--border); background: var(--cream); }
-  .riskMeter { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
-  .riskFill { height: 100%; border-radius: 4px; transition: width 1s ease; }
-  .riskFill.high { background: var(--red); }
-  .riskFill.medium { background: #d4820a; }
-  .riskFill.low { background: var(--green); }
-  .riskLabel { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; white-space: nowrap; }
-  .riskLabel.high { color: var(--red); }
-  .riskLabel.medium { color: var(--amber); }
-  .riskLabel.low { color: var(--green); }
-  .riskCount { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); }
-
-  /* Markdown rendered output */
-  .mdBody { font-size: 14px; line-height: 1.85; color: var(--ink); }
-  .mdBody h1 { font-family: 'Playfair Display', serif; font-size: 20px; margin: 24px 0 10px; color: var(--ink); border-bottom: 1px solid var(--border); padding-bottom: 6px; }
-  .mdBody h2 { font-family: 'Playfair Display', serif; font-size: 17px; margin: 20px 0 8px; color: var(--ink); }
-  .mdBody h3 { font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; font-weight: 500; margin: 16px 0 6px; color: var(--ink2); }
-  .mdBody p { margin-bottom: 10px; }
-  .mdBody ul, .mdBody ol { padding-left: 20px; margin-bottom: 10px; }
-  .mdBody li { margin-bottom: 4px; }
-  .mdBody strong { font-weight: 500; color: var(--ink); }
-  .mdBody code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: var(--parchment); padding: 1px 5px; }
-  .mdBody blockquote { border-left: 3px solid var(--gold); padding: 8px 14px; background: var(--parchment); margin: 12px 0; color: var(--muted); font-style: italic; }
-  .mdBody hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; display: block; }
-
-  /* Severity cards */
-  .sevCard { padding: 14px 16px; margin: 12px 0 0; border-left: 4px solid; }
-  .sevCard p { margin: 6px 0; }
-  .sevCard strong { display: block; margin-bottom: 4px; }
-  .sevCard.HIGH { border-color: var(--red); background: var(--red-bg); }
-  .sevCard.MEDIUM { border-color: #d4820a; background: var(--amber-bg); }
-  .sevCard.LOW { border-color: var(--green); background: var(--green-bg); }
-  .sevBadge { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.1em; padding: 2px 8px; margin-bottom: 6px; display: inline-block; }
-  .sevBadge.HIGH { background: var(--red); color: #fff; }
-  .sevBadge.MEDIUM { background: #d4820a; color: #fff; }
-  .sevBadge.LOW { background: var(--green); color: #fff; }
-
-  /* Chat panel */
-  .chatWrap { display: flex; flex-direction: column; height: calc(100vh - 62px - 45px); }
-  .chatMessages { flex: 1; overflow-y: auto; padding: 20px 28px; display: flex; flex-direction: column; gap: 14px; }
-  .chatMsg { max-width: 85%; }
-  .chatMsg.user { align-self: flex-end; }
-  .chatMsg.ai { align-self: flex-start; }
-  .chatBubble { padding: 12px 16px; font-size: 14px; line-height: 1.7; }
-  .chatMsg.user .chatBubble { background: var(--ink); color: #fff; font-family: 'IBM Plex Sans', sans-serif; }
-  .chatMsg.ai .chatBubble { background: var(--cream); border: 1px solid var(--border); color: var(--ink); }
-  .chatMsg.ai .chatBubble .mdBody { font-size: 14px; }
-  .chatSender { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
-  .chatInput { display: flex; gap: 0; border-top: 1px solid var(--border); background: var(--parchment); padding: 12px 20px; gap: 10px; }
-  .chatInput input { flex: 1; border: 1px solid var(--border); background: var(--cream); padding: 10px 14px; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; color: var(--ink); outline: none; }
-  .chatInput input:focus { border-color: var(--gold); }
-  .chatSendBtn { padding: 10px 20px; background: var(--ink); color: #fff; border: none; font-family: 'IBM Plex Mono', monospace; font-size: 12px; cursor: pointer; letter-spacing: 0.06em; transition: background 0.15s; }
-  .chatSendBtn:hover:not(:disabled) { background: var(--ink2); }
-  .chatSendBtn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  /* Full report */
-  .fullSection { margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
-  .fullSection:last-child { border-bottom: none; }
-  .fullSectionTitle { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--ink); margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
-  .fullSectionIcon { font-size: 18px; }
-
-  /* Error */
-  .errBox { background: var(--red-bg); border: 1px solid var(--red-border); padding: 18px 22px; color: var(--red); font-size: 14px; line-height: 1.7; margin-top: 20px; }
-  .errBox strong { display: block; font-size: 15px; margin-bottom: 6px; }
-
-  /* PDF export area */
-  #pdfContent { display: none; }
-
-  input[type="file"] { display: none; }
-  ::-webkit-scrollbar { width: 5px; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-  /* RTL support for Arabic */
-  .rtl { direction: rtl; text-align: right; font-family: 'IBM Plex Sans', sans-serif; }
+:root{--ink:#1a1a2e;--ink2:#2d2d4a;--gold:#c9a84c;--gold-light:#f0dfa0;--cream:#faf8f3;--parchment:#f2ede0;--border:#ddd8c8;--muted:#8a8070;--red:#b04040;--red-bg:#fdf0f0;--green:#2d6a4f;--green-bg:#f0f7f4;--amber:#92600a;--amber-bg:#fdf6e3;--blue:#1e4a7a;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--cream);font-family:'IBM Plex Sans',sans-serif;color:var(--ink);min-height:100vh;}
+.header{background:var(--ink);padding:0 28px;height:62px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--gold);position:sticky;top:0;z-index:200;}
+.hLeft{display:flex;align-items:center;gap:12px;}
+.logoMark{width:36px;height:36px;border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px;}
+.logoText{font-family:'Playfair Display',serif;font-size:18px;color:#fff;}
+.logoSub{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-top:2px;}
+.hRight{display:flex;align-items:center;gap:12px;}
+.langToggle{display:flex;background:rgba(255,255,255,.08);border:1px solid rgba(201,168,76,.3);overflow:hidden;}
+.langBtn{padding:5px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(255,255,255,.5);cursor:pointer;background:none;border:none;transition:all .15s;}
+.langBtn.on{background:var(--gold);color:var(--ink);font-weight:500;}
+.statusPill{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:4px 12px;border:1px solid rgba(201,168,76,.4);color:var(--gold);letter-spacing:.06em;}
+.layout{display:grid;grid-template-columns:290px 1fr;min-height:calc(100vh - 62px);}
+.sidebar{background:var(--parchment);border-right:1px solid var(--border);padding:20px 16px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;}
+.sLabel{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.dropZone{border:1.5px dashed var(--border);background:var(--cream);padding:20px 12px;text-align:center;cursor:pointer;transition:all .2s;user-select:none;}
+.dropZone:hover,.dropZone.drag{border-color:var(--gold);background:#fdf9f0;}
+.dropZone.loaded{border-style:solid;border-color:var(--green);background:var(--green-bg);}
+.dIcon{font-size:26px;margin-bottom:6px;}
+.dMain{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:2px;}
+.dSub{font-size:11px;color:var(--muted);}
+.dName{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--green);margin-top:6px;word-break:break-all;display:none;}
+.dropZone.loaded .dName{display:block;}
+.modeGrid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.modeBtn{padding:9px 7px;border:1px solid var(--border);background:var(--cream);cursor:pointer;text-align:left;transition:all .15s;font-family:'IBM Plex Sans',sans-serif;width:100%;}
+.modeBtn:hover{border-color:var(--gold);background:#fdf9f0;}
+.modeBtn.on{border-color:var(--ink);background:var(--ink);color:#fff;}
+.modeBtn.on .mi{color:var(--gold);}
+.mi{font-size:14px;display:block;margin-bottom:3px;}
+.ml{font-size:11px;font-weight:500;line-height:1.3;display:block;}
+.fullBtn{width:100%;padding:11px;background:var(--ink2);color:var(--gold-light);border:1px solid var(--gold);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.fullBtn:hover:not(:disabled){background:var(--gold);color:var(--ink);}
+.fullBtn:disabled{opacity:.4;cursor:not-allowed;}
+.customBox{display:none;}
+.customBox.on{display:block;}
+.customTa{width:100%;border:1px solid var(--border);background:var(--cream);padding:9px 11px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;color:var(--ink);resize:vertical;min-height:70px;outline:none;}
+.customTa:focus{border-color:var(--gold);}
+.runBtn{width:100%;padding:14px;background:var(--gold);color:var(--ink);border:none;font-family:'Playfair Display',serif;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;}
+.runBtn:hover:not(:disabled){background:#b8943e;}
+.runBtn:disabled{opacity:.4;cursor:not-allowed;}
+.disclaimer{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);padding-top:12px;}
+.main{display:flex;flex-direction:column;overflow:hidden;}
+.tabBar{display:flex;border-bottom:1px solid var(--border);background:var(--parchment);padding:0 28px;}
+.tab{padding:12px 18px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;text-transform:uppercase;}
+.tab.on{color:var(--ink);border-bottom-color:var(--gold);}
+.panels{flex:1;overflow-y:auto;}
+.panel{display:none;padding:28px 32px;}
+.panel.on{display:block;}
+.emptyState{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:380px;text-align:center;opacity:.35;}
+.emptyGlyph{font-family:'Playfair Display',serif;font-size:72px;color:var(--border);line-height:1;margin-bottom:14px;}
+.emptyLabel{font-size:14px;color:var(--muted);line-height:1.8;}
+.loadState{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:380px;gap:16px;}
+.loadMode{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;}
+.loadBar{width:200px;height:2px;background:var(--border);overflow:hidden;}
+.loadFill{height:100%;background:var(--gold);animation:sweep 1.5s ease-in-out infinite;}
+@keyframes sweep{0%{width:0;margin-left:0}50%{width:100%;margin-left:0}100%{width:0;margin-left:100%}}
+.loadSub{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);}
+.loadProgress{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--gold);letter-spacing:.06em;}
+.resultHdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.resultTitle{font-family:'Playfair Display',serif;font-size:24px;color:var(--ink);}
+.resultFile{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-top:3px;}
+.resultMeta{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);text-align:right;line-height:1.8;}
+.resultActions{display:flex;gap:8px;margin-top:8px;justify-content:flex-end;}
+.actBtn{padding:5px 12px;border:1px solid var(--border);background:transparent;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);cursor:pointer;transition:all .15s;letter-spacing:.06em;text-transform:uppercase;}
+.actBtn:hover{border-color:var(--ink);color:var(--ink);}
+.actBtn.gold{border-color:var(--gold);color:var(--amber);}
+.actBtn.gold:hover{background:var(--gold);color:var(--ink);}
+.riskScore{display:flex;align-items:center;gap:16px;padding:16px 20px;margin-bottom:20px;border:1px solid var(--border);background:var(--cream);}
+.riskMeter{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
+.riskFill{height:100%;border-radius:4px;transition:width 1s ease;}
+.riskFill.high{background:var(--red);}
+.riskFill.medium{background:#d4820a;}
+.riskFill.low{background:var(--green);}
+.riskLabel{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;white-space:nowrap;}
+.riskLabel.high{color:var(--red);}
+.riskLabel.medium{color:var(--amber);}
+.riskLabel.low{color:var(--green);}
+.riskCount{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);}
+.mdBody{font-size:14px;line-height:1.85;color:var(--ink);}
+.mdBody h1{font-family:'Playfair Display',serif;font-size:20px;margin:24px 0 10px;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.mdBody h2{font-family:'Playfair Display',serif;font-size:17px;margin:20px 0 8px;}
+.mdBody h3{font-size:14px;font-weight:500;margin:16px 0 6px;}
+.mdBody p{margin-bottom:10px;}
+.mdBody ul,.mdBody ol{padding-left:20px;margin-bottom:10px;}
+.mdBody li{margin-bottom:4px;}
+.mdBody table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px;}
+.mdBody th{background:var(--ink);color:#fff;padding:8px;text-align:left;font-weight:500;}
+.mdBody td{padding:8px;border:1px solid var(--border);}
+.mdBody tr:nth-child(even) td{background:var(--parchment);}
+.mdBody hr{border:none;border-top:1px solid var(--border);margin:18px 0;}
+.sevCard{padding:14px 16px;margin:12px 0 0;border-left:4px solid;}
+.sevCard p{margin:6px 0;}
+.sevCard.HIGH{border-color:var(--red);background:var(--red-bg);}
+.sevCard.MEDIUM{border-color:#d4820a;background:var(--amber-bg);}
+.sevCard.LOW{border-color:var(--green);background:var(--green-bg);}
+.sevBadge{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.1em;padding:2px 8px;margin-bottom:6px;display:inline-block;}
+.sevBadge.HIGH{background:var(--red);color:#fff;}
+.sevBadge.MEDIUM{background:#d4820a;color:#fff;}
+.sevBadge.LOW{background:var(--green);color:#fff;}
+.chatWrap{display:flex;flex-direction:column;height:calc(100vh - 62px - 45px);}
+.chatMessages{flex:1;overflow-y:auto;padding:20px 28px;display:flex;flex-direction:column;gap:14px;}
+.chatMsg{max-width:85%;}
+.chatMsg.user{align-self:flex-end;}
+.chatMsg.ai{align-self:flex-start;}
+.chatBubble{padding:12px 16px;font-size:14px;line-height:1.7;}
+.chatMsg.user .chatBubble{background:var(--ink);color:#fff;}
+.chatMsg.ai .chatBubble{background:var(--cream);border:1px solid var(--border);}
+.chatSender{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px;letter-spacing:.08em;text-transform:uppercase;}
+.chatInput{display:flex;gap:10px;border-top:1px solid var(--border);background:var(--parchment);padding:12px 20px;}
+.chatInput input{flex:1;border:1px solid var(--border);background:var(--cream);padding:10px 14px;font-family:'IBM Plex Sans',sans-serif;font-size:14px;color:var(--ink);outline:none;}
+.chatInput input:focus{border-color:var(--gold);}
+.chatSendBtn{padding:10px 20px;background:var(--ink);color:#fff;border:none;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;letter-spacing:.06em;}
+.chatSendBtn:disabled{opacity:.4;cursor:not-allowed;}
+.fullSection{margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+.fullSectionTitle{font-family:'Playfair Display',serif;font-size:20px;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.errBox{background:var(--red-bg);border:1px solid #e8c0c0;padding:18px 22px;color:var(--red);font-size:14px;line-height:1.7;}
+.errBox strong{display:block;font-size:15px;margin-bottom:6px;}
+input[type="file"]{display:none;}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 </style>
 </head>
 <body>
-
-<!-- HEADER -->
 <div class="header">
   <div class="hLeft">
     <div class="logoMark">⚖</div>
-    <div>
-      <div class="logoText">Lexis Intelligence</div>
-      <div class="logoSub">Legal Document Analyzer v2</div>
-    </div>
+    <div><div class="logoText">Lexis Intelligence</div><div class="logoSub">Legal Document Analyzer v2</div></div>
   </div>
   <div class="hRight">
     <div class="langToggle">
@@ -209,25 +146,18 @@
     <div class="statusPill" id="statusPill">● READY</div>
   </div>
 </div>
-
 <div class="layout">
-
-  <!-- SIDEBAR -->
   <div class="sidebar">
-
     <div>
       <div class="sLabel">1 — Document</div>
-      <div class="dropZone" id="dropZone"
-           onclick="document.getElementById('fi').click()"
-           ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)">
+      <div class="dropZone" id="dropZone" onclick="document.getElementById('fi').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)">
         <div class="dIcon" id="dIcon">📄</div>
         <div class="dMain" id="dMain">Click to upload</div>
-        <div class="dSub" id="dSub">PDF, Word, Excel, PowerPoint, TXT</div>
+        <div class="dSub" id="dSub">PDF, Word, Excel, TXT</div>
         <div class="dName" id="dName"></div>
       </div>
       <input type="file" id="fi" accept=".pdf,.txt,.md,.csv,.doc,.docx,.xlsx,.xls,.pptx" onchange="handleFile(this.files[0])">
     </div>
-
     <div>
       <div class="sLabel">2 — Analysis Mode</div>
       <div class="modeGrid">
@@ -241,504 +171,312 @@
         <button class="modeBtn" data-mode="custom" onclick="pickMode(this)"><span class="mi">💬</span><span class="ml">Ask Anything</span></button>
       </div>
     </div>
-
     <div class="customBox" id="customBox">
       <div class="sLabel">Your Question</div>
-      <textarea class="customTa" id="customQ" placeholder="e.g. What are the termination conditions? Who bears liability?"></textarea>
+      <textarea class="customTa" id="customQ" placeholder="e.g. What are the termination conditions?"></textarea>
     </div>
-
     <button class="runBtn" id="runBtn" onclick="analyze()">Analyze Document →</button>
-
     <div>
       <div class="sLabel">Full Report</div>
       <button class="fullBtn" id="fullBtn" onclick="runFullAnalysis()">⚡ Run All 7 Analyses</button>
     </div>
-
-    <div class="disclaimer">
-      ⚠ For informational purposes only.<br>
-      Not a substitute for qualified legal counsel.<br><br>
-      Documents are processed securely. Not stored.
-    </div>
-
+    <div class="disclaimer">⚠ For informational purposes only. Not a substitute for legal counsel. Documents processed securely and not stored.</div>
   </div>
-
-  <!-- MAIN -->
   <div class="main">
-
-    <!-- Tab bar -->
     <div class="tabBar">
-      <button class="tab on" data-tab="analysis" onclick="switchTab('analysis',this)">Analysis</button>
-      <button class="tab" data-tab="chat" onclick="switchTab('chat',this)">Follow-up Chat</button>
-      <button class="tab" data-tab="report" onclick="switchTab('report',this)">Full Report</button>
+      <button class="tab on" onclick="switchTab('analysis',this)">Analysis</button>
+      <button class="tab" onclick="switchTab('chat',this)">Follow-up Chat</button>
+      <button class="tab" onclick="switchTab('report',this)">Full Report</button>
     </div>
-
     <div class="panels">
-
-      <!-- ANALYSIS PANEL -->
       <div class="panel on" id="panel-analysis">
-        <div class="emptyState" id="emptyState">
-          <div class="emptyGlyph">§</div>
-          <div class="emptyLabel">Upload a legal document<br>Choose an analysis mode<br>Click Analyze Document</div>
-        </div>
+        <div class="emptyState"><div class="emptyGlyph">§</div><div class="emptyLabel">Upload a document<br>Choose an analysis mode<br>Click Analyze Document</div></div>
       </div>
-
-      <!-- CHAT PANEL -->
       <div class="panel" id="panel-chat" style="padding:0">
         <div class="chatWrap">
           <div class="chatMessages" id="chatMessages">
-            <div class="emptyState" style="min-height:300px">
-              <div class="emptyGlyph" style="font-size:40px">💬</div>
-              <div class="emptyLabel">Run an analysis first, then ask<br>follow-up questions about your document</div>
-            </div>
+            <div class="emptyState" style="min-height:300px"><div class="emptyGlyph" style="font-size:40px">💬</div><div class="emptyLabel">Run an analysis first</div></div>
           </div>
           <div class="chatInput">
-            <input type="text" id="chatQ" placeholder="Ask a follow-up question about this document…" onkeydown="if(event.key==='Enter')sendChat()">
+            <input type="text" id="chatQ" placeholder="Ask a follow-up question…" onkeydown="if(event.key==='Enter')sendChat()">
             <button class="chatSendBtn" id="chatSendBtn" onclick="sendChat()">Send →</button>
           </div>
         </div>
       </div>
-
-      <!-- FULL REPORT PANEL -->
       <div class="panel" id="panel-report">
-        <div class="emptyState" id="reportEmpty">
-          <div class="emptyGlyph" style="font-size:40px">📑</div>
-          <div class="emptyLabel">Click "Run All 8 Analyses" to generate<br>a complete legal report</div>
-        </div>
+        <div class="emptyState"><div class="emptyGlyph" style="font-size:40px">📑</div><div class="emptyLabel">Click "Run All 7 Analyses"<br>to generate a complete legal report</div></div>
       </div>
-
     </div>
   </div>
 </div>
 
-<!-- Hidden PDF content -->
-<div id="pdfContent"></div>
-
 <script>
-  // ── STATE ──
-  let fileB64 = null, fileMime = 'text/plain', fileExt = '', fileName = '', mode = 'summary';
-  let currentLang = 'en';
-  let lastAnalysisText = '';
-  let chatHistory = [];
-  let documentContext = '';
 
-  // ── PROMPTS ──
-  const FORMAT_TEMPLATES = {
-    summary: `The following is an analysis of a legal document. Reformat it into ONLY these sections. Nothing else.
+var fileB64=null,fileExt='',fileMime='text/plain',fileName='',mode='summary',currentLang='en';
+var lastAnalysisText='',chatHistory=[];
 
-## Document Type
-[one sentence]
+var FMT={
+  summary:'The following is raw analysis of a legal document. Reformat into ONLY these exact sections, nothing else:\n\n## Document Type\n[one sentence]\n\n## Parties\n| Party | Role | Jurisdiction |\n|-------|------|-------------|\n| name | role | country |\n\n## Core Purpose\n[2-3 sentences]\n\n## Key Commercial Terms\n| Term | Detail |\n|------|--------|\n| Duration | |\n| Payment terms | |\n| Key rates | |\n| Insurance | |\n| Governing law | |\n\n## Obligations\n**[Party 1 name]:**\n- obligation\n\n**[Party 2 name]:**\n- obligation\n\n## Verdict\n[One paragraph: Standard / Favorable to X / Requires negotiation — and why]\n\nHere is the raw analysis:',
 
-## Parties
-| Party | Role | Jurisdiction |
-|-------|------|-------------|
-| [name] | [role] | [country] |
+  dates:'The following deadlines were extracted from a legal document. Reformat into ONLY a table, missing dates, and top 3 critical. Nothing else.\n\n## Dates & Deadlines\n\n| Date or Timeframe | Action Required | Responsible Party | If Missed | Priority |\n|------------------|----------------|------------------|-----------|----------|\n| 30 days from invoice | Pay fees | Company | Suspension | Critical |\n\nPriority = Critical, Important, or Advisory.\n\n## Missing Dates\n- dates that should exist but are not specified\n\n## Top 3 Critical Deadlines\n1. deadline — why critical\n2. deadline — why critical\n3. deadline — why critical\n\nHere are the deadlines to reformat:',
 
-## Core Purpose
-[2-3 sentences]
+  clauses:'The following clause analysis was extracted. Reformat into ONLY a scorecard and clause cards, nothing else.\n\n## Clause Scorecard\n| Standard | Favorable | Unfavorable | Unusual |\n|----------|-----------|-------------|---------|\n| 0 | 0 | 0 | 0 |\n\n---\n\n### [Clause Name] — STANDARD\nPlain language explanation.\nConcerns: none\n\n---\n\n### [Clause Name] — UNFAVORABLE\nPlain language explanation.\nConcern: specific concern\n\nUse only: STANDARD, FAVORABLE, UNFAVORABLE, UNUSUAL after the dash.\n\nHere is the analysis to reformat:',
 
-## Key Commercial Terms
-| Term | Detail |
-|------|--------|
-| Duration | |
-| Payment terms | |
-| Key rates | |
-| Insurance | |
-| Governing law | |
+  definitions:'The following was extracted from a legal document. Reformat into ONLY these sections, nothing else:\n\n## Defined Terms\n| Term | Definition | Concerns |\n|------|-----------|----------|\n| term | definition | none or issue |\n\n## Undefined but Important Terms\n- term used but never defined\n\n## Ambiguous Language\n**"phrase"** — found in clause reference\n- Interpretation 1: meaning\n- Interpretation 2: meaning\n- Risk: dispute that could arise\n\n## Inconsistencies\n- inconsistency found\n\nHere is the content to reformat:',
 
-## Obligations
-**[Party 1]:**
-- [obligation]
+  compliance:'The following compliance review was extracted. Reformat into ONLY these sections, nothing else:\n\n## Applicable Laws\n| Law or Regulation | Jurisdiction | How It Applies |\n|------------------|-------------|----------------|\n| law name | country | explanation |\n\n## Compliance Gaps\n| Missing Provision | Severity | Recommendation |\n|------------------|---------|----------------|\n| what is missing | High/Medium/Low | what to add |\n\n## Regulatory Red Flags\n- provision conflicting with law\n\n## Jurisdiction\n[Is governing law appropriate?]\n\n## Data Privacy\n- data protection issues\n\nHere is the review to reformat:',
 
-**[Party 2]:**
-- [obligation]
+  obligations:'The following obligations mapping was extracted. Reformat into ONLY these sections, nothing else:\n\n## [Party 1 Name]\n\n### Must Do\n| Obligation | By When | If Breached |\n|-----------|---------|-------------|\n| obligation | deadline | consequence |\n\n### Entitled To\n- right — conditions\n\n### Cannot Do\n- restriction — scope\n\n---\n\n## [Party 2 Name]\n\n### Must Do\n| Obligation | By When | If Breached |\n|-----------|---------|-------------|\n\n### Entitled To\n- right — conditions\n\n### Cannot Do\n- restriction — scope\n\n---\n\n## Imbalances\n- anything one-sided\n\n## Enforcement\n[remedies for breach]\n\nHere is the mapping to reformat:'
+};
 
-## Verdict
-[One paragraph: Standard / Favorable to [party] / Requires negotiation — and why]
+var PROMPTS={
+  summary:'Extract from this legal document: 1) document type, 2) all parties with name/role/jurisdiction, 3) core purpose in 2-3 sentences, 4) key commercial terms (duration, payment, rates, insurance, governing law), 5) main obligations per party, 6) overall assessment.',
+  risks:'Identify every risk and red flag in this legal document.\n\nYOU MUST USE EXACTLY THIS FORMAT FOR EVERY RISK:\n\n### [HIGH] Risk title\n**Clause:** reference\n**Explanation:** plain language explanation\n**Why it matters:** why dangerous\n**Ask a lawyer:** specific question\n\n---\n\n### [MEDIUM] Risk title\n**Clause:** reference\n**Explanation:** explanation\n**Why it matters:** impact\n**Ask a lawyer:** question\n\n---\n\n### [LOW] Risk title\n**Clause:** reference\n**Explanation:** explanation\n**Why it matters:** impact\n**Ask a lawyer:** question\n\n---\n\nOrder most to least severe. End with:\n## Risk Summary\nOverall risk level: **HIGH** or **MEDIUM** or **LOW**\nHigh risks: X | Medium risks: X | Low risks: X\nTop recommendation: one sentence.',
+  dates:'Find every deadline, date, notice period and timeframe in this legal document. For each: what must happen, who is responsible, and what happens if missed.',
+  clauses:'Extract every major clause. For each: clause name, plain language meaning, whether Standard/Favorable/Unfavorable/Unusual, and specific concerns.',
+  definitions:'List: top 15 defined terms with definitions, up to 5 undefined important terms, up to 5 ambiguous phrases with two interpretations each, key inconsistencies.',
+  compliance:'List: applicable laws/regulations (max 6), missing provisions with severity (max 6), provisions conflicting with law (max 4), jurisdiction assessment, data privacy issues.',
+  obligations:'For each party: top 8 obligations with deadlines and consequences, top 4 rights, top 4 restrictions. Note 3 biggest imbalances and enforcement mechanisms.',
+  custom:null
+};
 
-Here is the analysis to reformat:`,
-    dates: `The following deadlines were found in a legal document. Reformat into ONLY a table, missing dates, and top 3 critical. Nothing else.
+var LABELS={summary:'Plain Language Summary',risks:'Risk & Red Flag Analysis',dates:'Key Dates & Deadlines',clauses:'Clause-Level Analysis',definitions:'Definitions & Cross-References',compliance:'Compliance Review',obligations:'Rights & Obligations Map',custom:'Custom Analysis'};
+var ICONS={summary:'📋',risks:'🚨',dates:'📅',clauses:'🔍',definitions:'📖',compliance:'✅',obligations:'⚡',custom:'💬'};
+var LANG_SUFFIX={en:'',ar:'\n\nIMPORTANT: Respond entirely in Arabic.',fr:'\n\nIMPORTANT: Respond entirely in French.'};
+var TWO_CALL=['summary','dates','clauses','definitions','compliance','obligations'];
 
-## Dates & Deadlines
+function onDragOver(e){e.preventDefault();document.getElementById('dropZone').classList.add('drag');}
+function onDragLeave(){document.getElementById('dropZone').classList.remove('drag');}
+function onDrop(e){e.preventDefault();onDragLeave();if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);}
 
-| Date or Timeframe | Action Required | Responsible Party | If Missed | Priority |
-|------------------|----------------|------------------|-----------|----------|
-| 30 days from invoice | Pay service fees | Company | Service suspension | Critical |
-| [add all other rows] | | | | |
-
-Priority = Critical, Important, or Advisory.
-
-## Missing Dates
-- [date that should exist but doesn't]
-
-## Top 3 Critical Deadlines
-1. [deadline] — [why critical]
-2. [deadline] — [why critical]
-3. [deadline] — [why critical]
-
-Here are the deadlines to reformat:`,
-    clauses: `The following clause analysis was extracted from a legal document. Reformat into ONLY a scorecard and clause cards. Nothing else.
-
-## Clause Scorecard
-| Standard | Favorable | Unfavorable | Unusual |
-|----------|-----------|-------------|---------|
-| [count] | [count] | [count] | [count] |
-
----
-
-### [Clause Name] — STANDARD
-[plain language explanation]
-Concerns: [none / describe]
-
----
-
-### [Clause Name] — UNFAVORABLE
-[plain language explanation]
-Concern: [specific concern]
-
----
-
-Use only: STANDARD, FAVORABLE, UNFAVORABLE, or UNUSUAL after the dash. Cover every major clause.
-
-Here is the clause analysis to reformat:`,
-    definitions: `The following was extracted from a legal document about its defined terms and language. Reformat into ONLY these sections. Nothing else.
-
-## Defined Terms
-| Term | Definition | Concerns |
-|------|-----------|---------|
-| [term] | [definition] | [none or issue] |
-
-## Undefined but Important Terms
-- [term that is used but never defined]
-
-## Ambiguous Language
-**"[exact phrase]"** — found in [clause reference]
-- Interpretation 1: [meaning]
-- Interpretation 2: [meaning]
-- Risk: [what dispute could arise]
-
-## Inconsistencies
-- [term used differently in different places]
-
-Here is the content to reformat:`,
-    compliance: `The following compliance review was extracted from a legal document. Reformat into ONLY these sections. Nothing else.
-
-## Applicable Laws
-| Law or Regulation | Jurisdiction | How It Applies |
-|------------------|-------------|---------------|
-| [law name] | [country] | [brief explanation] |
-
-## Compliance Gaps
-| Missing Provision | Severity | Recommendation |
-|------------------|---------|---------------|
-| [what is missing] | High/Medium/Low | [what to add] |
-
-## Regulatory Red Flags
-- [provision that may conflict with law]
-
-## Jurisdiction
-[Is governing law appropriate? Any cross-border issues?]
-
-## Data Privacy
-- [any PDPL, GDPR, or data protection issues]
-
-Here is the compliance review to reformat:`,
-    obligations: `The following obligations mapping was extracted from a legal document. Reformat into ONLY these sections. Nothing else.
-
-## [Party 1 Name]
-
-### Must Do
-| Obligation | By When | If Breached |
-|-----------|---------|------------|
-| [obligation] | [deadline] | [consequence] |
-
-### Entitled To
-- [right] — [conditions]
-
-### Cannot Do
-- [restriction] — [scope] — [duration]
-
----
-
-## [Party 2 Name]
-
-### Must Do
-| Obligation | By When | If Breached |
-|-----------|---------|------------|
-
-### Entitled To
-- [right] — [conditions]
-
-### Cannot Do
-- [restriction] — [scope] — [duration]
-
----
-
-## Imbalances
-- [anything one-sided or disproportionate — highlighted clearly]
-
-## Enforcement
-[What remedies are specified for breach?]
-
-Here is the obligations mapping to reformat:`,
+function handleFile(f){
+  if(!f)return;
+  fileName=f.name;fileExt=f.name.split('.').pop().toLowerCase();
+  fileMime=(fileExt==='pdf')?'application/pdf':'text/plain';
+  var r=new FileReader();
+  r.onload=function(e){
+    fileB64=e.target.result.split(',')[1];chatHistory=[];
+    var dz=document.getElementById('dropZone');dz.classList.add('loaded');
+    document.getElementById('dIcon').textContent='✓';
+    document.getElementById('dMain').textContent='Document loaded';
+    document.getElementById('dSub').textContent='Ready to analyze';
+    document.getElementById('dName').textContent=f.name;
   };
+  r.readAsDataURL(f);
+}
 
-  const PROMPTS = {
+function pickMode(btn){
+  document.querySelectorAll('.modeBtn').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');mode=btn.dataset.mode;
+  document.getElementById('customBox').classList.toggle('on',mode==='custom');
+}
 
-    summary: `Extract the following information from this legal document:
-1. The document type
-2. All parties — name, role, jurisdiction
-3. The core purpose in 2-3 sentences
-4. Key commercial terms — duration, payment, rates, insurance, governing law
-5. Main obligations for each party
-6. Your overall assessment — is this standard, favorable to one party, or needs negotiation and why`,
+function setLang(lang,btn){
+  currentLang=lang;
+  document.querySelectorAll('.langBtn').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+}
 
-    risks: `Identify every risk and red flag in this legal document.
+function switchTab(tab,btn){
+  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('on');});
+  btn.classList.add('on');
+  document.getElementById('panel-'+tab).classList.add('on');
+}
 
-YOU MUST USE EXACTLY THIS FORMAT FOR EVERY RISK — NO EXCEPTIONS:
-
-### [HIGH] Risk title here
-**Clause:** Section reference
-**Explanation:** Plain language explanation of the risk.
-**Why it matters:** Why this is dangerous to the reader.
-**Ask a lawyer:** One specific question to raise with legal counsel.
-
----
-
-### [MEDIUM] Risk title here
-**Clause:** Section reference
-**Explanation:** Plain language explanation.
-**Why it matters:** Why this matters.
-**Ask a lawyer:** Specific question.
-
----
-
-### [LOW] Risk title here
-**Clause:** Section reference
-**Explanation:** Plain language explanation.
-**Why it matters:** Why this matters.
-**Ask a lawyer:** Specific question.
-
----
-
-Order from most severe to least. Every risk MUST start with ### [HIGH], ### [MEDIUM], or ### [LOW].
-
-End with:
-## Risk Summary
-Overall risk level: **HIGH** or **MEDIUM** or **LOW**
-High risks: X | Medium risks: X | Low risks: X
-Top recommendation: One sentence.`,
-
-    dates: `Find and list every deadline, date, notice period, and timeframe in this legal document. For each one explain what must happen, who is responsible, and what happens if it is missed.`,
-
-    clauses: `Extract every major clause from this legal document. For each clause provide: the clause name, what it means in plain language, whether it is Standard / Favorable / Unfavorable / Unusual, and any specific concerns.`,
-
-    definitions: `From this legal document list: the top 15 most important defined terms and their definitions, up to 5 undefined but important terms, up to 5 ambiguous phrases with dual interpretations, and any key inconsistencies.`,
-
-    compliance: `List from this legal document: 1) applicable laws/regulations (max 6), 2) missing required provisions with severity High/Medium/Low (max 6), 3) provisions conflicting with law (max 4), 4) one paragraph on jurisdiction, 5) data privacy issues (max 3).`,
-
-    obligations: `For each party list their top 8 obligations with deadlines and consequences, top 4 rights, top 4 restrictions. Note the 3 biggest imbalances and enforcement mechanisms.`,
-
-    custom: null
-  };
-
-  const LANG_SUFFIX = {
-    en: '',
-    ar: '\n\nIMPORTANT: Provide your ENTIRE response in Arabic language. Use Arabic script throughout.',
-    fr: '\n\nIMPORTANT: Provide your ENTIRE response in French language.'
-  };
-
-  const LABELS = {
-    summary:'Plain Language Summary', risks:'Risk & Red Flag Analysis',
-    dates:'Key Dates & Deadlines', clauses:'Clause-Level Analysis',
-    definitions:'Definitions & Cross-References', compliance:'Compliance Review',
-    obligations:'Rights & Obligations Map', custom:'Custom Analysis'
-  };
-
-  const MODE_ICONS = {
-    summary:'📋', risks:'🚨', dates:'📅', clauses:'🔍',
-    definitions:'📖', compliance:'✅', obligations:'⚡', custom:'💬'
-  };
-
-  // ── FILE HANDLING ──
-  function onDragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('drag'); }
-  function onDragLeave() { document.getElementById('dropZone').classList.remove('drag'); }
-  function onDrop(e) { e.preventDefault(); onDragLeave(); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); }
-
-  function handleFile(file) {
-    if (!file) return;
-    fileName = file.name;
-    fileExt = file.name.split('.').pop().toLowerCase();
-    fileMime = (file.type === 'application/pdf' || fileExt === 'pdf') ? 'application/pdf' : 'text/plain';
-    const r = new FileReader();
-    r.onload = e => {
-      fileB64 = e.target.result.split(',')[1];
-      documentContext = '';
-      chatHistory = [];
-      document.getElementById('dropZone').classList.add('loaded');
-      document.getElementById('dIcon').textContent = '✓';
-      document.getElementById('dMain').textContent = 'Document loaded';
-      document.getElementById('dSub').textContent = 'Ready to analyze';
-      document.getElementById('dName').textContent = file.name;
-    };
-    r.readAsDataURL(file);
+async function callAPI(prompt,includeDoc){
+  if(includeDoc===undefined)includeDoc=true;
+  var content=[];
+  var officeExts=['doc','docx','xlsx','xls','pptx'];
+  var isOffice=includeDoc&&fileB64&&officeExts.indexOf(fileExt)>-1;
+  if(includeDoc&&fileB64&&!isOffice){
+    content.push({type:'document',source:{type:'base64',media_type:fileMime,data:fileB64}});
   }
+  content.push({type:'text',text:prompt});
+  var body={
+    _fileType:fileExt,
+    _fileData:(includeDoc&&fileB64&&isOffice)?fileB64:undefined,
+    model:'claude-sonnet-4-20250514',
+    max_tokens:4000,
+    system:'You are Lexis, an expert legal document analyst. Follow the exact format and structure requested.',
+    messages:(chatHistory.length>0&&!includeDoc)?chatHistory:[{role:'user',content:content}]
+  };
+  var res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  var data=await res.json();
+  if(!res.ok)throw new Error(data&&data.error?data.error.message:'Error '+res.status);
+  var text=(data.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('\n');
+  if(!text)throw new Error('Empty response. Please try again.');
+  var tokens=((data.usage||{}).input_tokens||0)+((data.usage||{}).output_tokens||0);
+  return{text:text,tokens:tokens};
+}
 
-  // ── MODE ──
-  function pickMode(btn) {
-    document.querySelectorAll('.modeBtn').forEach(b => b.classList.remove('on'));
-    btn.classList.add('on');
-    mode = btn.dataset.mode;
-    document.getElementById('customBox').classList.toggle('on', mode === 'custom');
-  }
-
-  // ── LANGUAGE ──
-  function setLang(lang, btn) {
-    currentLang = lang;
-    document.querySelectorAll('.langBtn').forEach(b => b.classList.remove('on'));
-    btn.classList.add('on');
-  }
-
-  // ── TABS ──
-  function switchTab(tab, btn) {
-    document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
-    btn.classList.add('on');
-    document.getElementById('panel-' + tab).classList.add('on');
-  }
-
-  // ── API CALL ──
-  async function callAPI(prompt, includeDoc = true) {
-    const content = [];
-    const officeExts = ['doc','docx','xlsx','xls','pptx'];
-    const isOffice = includeDoc && fileB64 && officeExts.includes(fileExt);
-    if (includeDoc && fileB64) {
-      if (isOffice) {
-        // Office file: send as text placeholder, server will replace with extracted text
-        content.push({ type: 'text', text: '[OFFICE_DOC_PLACEHOLDER]' });
-      } else {
-        content.push({ type: 'document', source: { type: 'base64', media_type: fileMime, data: fileB64 } });
-      }
+async function analyze(){
+  if(!fileB64){showError('No Document','Please upload a document first.');return;}
+  var basePrompt=mode==='custom'?document.getElementById('customQ').value.trim():PROMPTS[mode];
+  if(!basePrompt){showError('No Question','Please type your question.');return;}
+  var prompt=basePrompt+LANG_SUFFIX[currentLang];
+  var btn=document.getElementById('runBtn');
+  btn.disabled=true;btn.textContent='Analyzing…';
+  setStatus('ANALYZING');
+  switchTab('analysis',document.querySelector('.tab'));
+  showLoading('panel-analysis',LABELS[mode]);
+  var t0=Date.now();
+  try{
+    var text,tokens;
+    if(TWO_CALL.indexOf(mode)>-1){
+      var r1=await callAPI(prompt);
+      var trimmed=r1.text.length>3500?r1.text.substring(0,3500)+'\n[truncated]':r1.text;
+      var r2=await callAPI(FMT[mode]+'\n\n'+trimmed,false);
+      text=r2.text;tokens=r1.tokens+r2.tokens;
+    } else {
+      var r=await callAPI(prompt);text=r.text;tokens=r.tokens;
     }
-    content.push({ type: 'text', text: prompt });
+    lastAnalysisText=text;
+    chatHistory=[
+      {role:'user',content:[
+        officeDoc()?{type:'text',text:'[Document extracted by server]'}:{type:'document',source:{type:'base64',media_type:fileMime,data:fileB64}},
+        {type:'text',text:prompt}
+      ]},
+      {role:'assistant',content:text}
+    ];
+    var elapsed=((Date.now()-t0)/1000).toFixed(1);
+    renderResult('panel-analysis',LABELS[mode],text,elapsed,tokens);
+    setStatus('READY');
+    document.getElementById('chatMessages').innerHTML='<div style="font-family:monospace;font-size:10px;color:var(--muted);text-align:center;padding:12px">ANALYSIS COMPLETE — ASK FOLLOW-UP QUESTIONS BELOW</div>';
+  } catch(err){showError('Analysis Failed',err.message);setStatus('ERROR');}
+  finally{btn.disabled=false;btn.textContent='Analyze Document →';}
+}
 
-    const officeList = ['doc','docx','xlsx','xls','pptx'];
-    const sendFileData = includeDoc && fileB64 && officeList.includes(fileExt);
+function officeDoc(){return ['doc','docx','xlsx','xls','pptx'].indexOf(fileExt)>-1;}
 
-    const res = await fetch('/api/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        _fileType: fileExt,
-        _fileData: sendFileData ? fileB64 : undefined,
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 4000,
-        system: 'You are Lexis, an expert legal document analyst with 20+ years of experience across contracts, NDAs, employment law, real estate, compliance, regulations, and judicial decisions. Follow the exact format and structure specified in each request. Do not add sections that were not requested.',
-        messages: chatHistory.length > 0 && !includeDoc ? chatHistory : [{ role: 'user', content }]
-      })
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error?.message || `Error ${res.status}`);
-    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
-    if (!text) throw new Error('Empty response. Please try again.');
-    return { text, tokens: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0) };
-  }
-
-  // ── SINGLE ANALYSIS ──
-  async function analyze() {
-    if (!fileB64) { showAnalysisError('No Document', 'Please upload a document first.'); return; }
-    const basePrompt = mode === 'custom' ? document.getElementById('customQ').value.trim() : PROMPTS[mode];
-    if (!basePrompt) { showAnalysisError('No Question', 'Please type your question.'); return; }
-    const prompt = basePrompt + LANG_SUFFIX[currentLang];
-
-    const btn = document.getElementById('runBtn');
-    btn.disabled = true; btn.textContent = 'Analyzing…';
-    setStatus('ANALYZING');
-    switchTab('analysis', document.querySelector('.tab'));
-
-    showLoadingPanel('panel-analysis', LABELS[mode]);
-    const t0 = Date.now();
-
-    try {
-      let text, tokens;
-
-      const twoCallModes = ['summary','dates','clauses','definitions','compliance','obligations'];
-      if (twoCallModes.includes(mode)) {
-        // TWO-CALL APPROACH: Call 1 extracts, Call 2 formats
-        const result1 = await callAPI(prompt);
-        const template = FORMAT_TEMPLATES[mode];
-        // Trim Call 1 output to avoid token overflow in Call 2 (max 6000 chars)
-        const trimmed = result1.text.length > 3500 ? result1.text.substring(0, 3500) + '\n[truncated]' : result1.text;
-        const formatPrompt = template + '\n\n' + trimmed;
-        const result2 = await callAPI(formatPrompt, false);
-        text = result2.text;
-        tokens = result1.tokens + result2.tokens;
+async function runFullAnalysis(){
+  if(!fileB64){alert('Please upload a document first.');return;}
+  var modes=['summary','risks','dates','clauses','definitions','compliance','obligations'];
+  var btn=document.getElementById('fullBtn');btn.disabled=true;setStatus('FULL REPORT');
+  switchTab('report',document.querySelectorAll('.tab')[2]);
+  var rp=document.getElementById('panel-report');
+  rp.innerHTML='<div class="loadState"><div class="loadMode">Full Document Analysis</div><div class="loadBar"><div class="loadFill"></div></div><div class="loadSub" id="fls">Starting…</div><div class="loadProgress" id="flp">0 / '+modes.length+'</div></div>';
+  var results={};
+  for(var i=0;i<modes.length;i++){
+    var m=modes[i];
+    document.getElementById('fls').textContent='Analyzing: '+LABELS[m]+'…';
+    document.getElementById('flp').textContent=i+' / '+modes.length;
+    try{
+      var p=PROMPTS[m]+LANG_SUFFIX[currentLang];
+      var pm=mode;mode=m;
+      if(TWO_CALL.indexOf(m)>-1){
+        var r1=await callAPI(p);
+        var tr=r1.text.length>3500?r1.text.substring(0,3500)+'\n[truncated]':r1.text;
+        var r2=await callAPI(FMT[m]+'\n\n'+tr,false);
+        results[m]=r2.text;
       } else {
-        const result = await callAPI(prompt);
-        text = result.text;
-        tokens = result.tokens;
+        var r=await callAPI(p);results[m]=r.text;
       }
-
-      lastAnalysisText = text;
-      documentContext = text;
-
-      // Seed chat history with document + first analysis
-      chatHistory = [
-        { role: 'user', content: [
-          ['pdf','txt','md','csv',''].includes(fileExt) ? { type: 'document', source: { type: 'base64', media_type: fileMime, data: fileB64 } } : { type: 'text', text: '[Office file - extracted by server]' },
-          { type: 'text', text: prompt }
-        ]},
-        { role: 'assistant', content: text }
-      ];
-
-      const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
-      renderAnalysis('panel-analysis', LABELS[mode], text, elapsed, tokens);
-      setStatus('READY');
-
-      // Enable chat
-      document.getElementById('chatMessages').innerHTML = `
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);text-align:center;padding:12px;letter-spacing:0.08em">
-          ANALYSIS COMPLETE — ASK FOLLOW-UP QUESTIONS BELOW
-        </div>`;
-
-    } catch (err) {
-      showAnalysisError('Analysis Failed', err.message);
-      setStatus('ERROR');
-    } finally {
-      btn.disabled = false; btn.textContent = 'Analyze Document →';
-    }
+      mode=pm;
+    } catch(err){results[m]='Error: '+err.message;}
   }
+  var html='<div class="resultHdr"><div><div class="resultTitle">Complete Legal Analysis</div><div class="resultFile">'+escHtml(fileName)+'</div></div><div style="text-align:right"><div class="resultMeta">'+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'<br>Lexis Intelligence v2</div><div class="resultActions"><button class="actBtn gold" onclick="exportPDF()">⬇ PDF</button><button class="actBtn" onclick="copyFull()">Copy All</button></div></div></div>';
+  modes.forEach(function(m){if(results[m])html+='<div class="fullSection"><div class="fullSectionTitle">'+ICONS[m]+' '+LABELS[m]+'</div><div class="mdBody">'+renderMd(results[m])+'</div></div>';});
+  rp.innerHTML=html;window._fr=results;setStatus('READY');btn.disabled=false;
+}
 
-  // ── FULL REPORT ──
-  async function runFullAnalysis() {
-    if (!fileB64) { alert('Please upload a document first.'); return; }
+async function sendChat(){
+  if(!fileB64){alert('Upload a document and run analysis first.');return;}
+  var q=document.getElementById('chatQ').value.trim();if(!q)return;
+  var sb=document.getElementById('chatSendBtn');sb.disabled=true;
+  document.getElementById('chatQ').value='';
+  var msgs=document.getElementById('chatMessages');
+  msgs.innerHTML+='<div class="chatMsg user"><div class="chatSender">You</div><div class="chatBubble">'+escHtml(q)+'</div></div>';
+  msgs.scrollTop=msgs.scrollHeight;
+  chatHistory.push({role:'user',content:q});
+  var tid='t'+Date.now();
+  msgs.innerHTML+='<div class="chatMsg ai" id="'+tid+'"><div class="chatSender">Lexis</div><div class="chatBubble" style="color:var(--muted);font-style:italic">Thinking…</div></div>';
+  msgs.scrollTop=msgs.scrollHeight;
+  try{
+    var res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,
+        system:'You are Lexis, an expert legal analyst answering follow-up questions. Be concise and precise.',
+        messages:chatHistory})});
+    var data=await res.json();
+    if(!res.ok)throw new Error(data&&data.error?data.error.message:'Error');
+    var reply=(data.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('\n');
+    chatHistory.push({role:'assistant',content:reply});
+    document.getElementById(tid).innerHTML='<div class="chatSender">Lexis</div><div class="chatBubble"><div class="mdBody">'+renderMd(reply)+'</div></div>';
+  } catch(err){
+    document.getElementById(tid).innerHTML='<div class="chatSender">Lexis</div><div class="chatBubble" style="color:var(--red)">Error: '+escHtml(err.message)+'</div>';
+  } finally{sb.disabled=false;msgs.scrollTop=msgs.scrollHeight;}
+}
 
-    const modes = ['summary', 'risks', 'dates', 'clauses', 'definitions', 'compliance', 'obligations'];
-    const btn = document.getElementById('fullBtn');
-    btn.disabled = true;
-    setStatus('FULL REPORT');
+function renderMd(text){
+  var html=marked.parse(text);
+  html=html.replace(/<h3>\[HIGH\]\s*(.*?)<\/h3>/g,'<div class="sevCard HIGH"><span class="sevBadge HIGH">HIGH</span><strong>$1</strong></div>');
+  html=html.replace(/<h3>\[MEDIUM\]\s*(.*?)<\/h3>/g,'<div class="sevCard MEDIUM"><span class="sevBadge MEDIUM">MEDIUM</span><strong>$1</strong></div>');
+  html=html.replace(/<h3>\[LOW\]\s*(.*?)<\/h3>/g,'<div class="sevCard LOW"><span class="sevBadge LOW">LOW</span><strong>$1</strong></div>');
+  html=html.replace(/<h3>\[CRITICAL\]\s*(.*?)<\/h3>/g,'<div class="sevCard HIGH"><span class="sevBadge HIGH">CRITICAL</span><strong>$1</strong></div>');
+  return html;
+}
 
-    switchTab('report', document.querySelectorAll('.tab')[2]);
+function getRiskScore(text){
+  var h=(text.match(/\[HIGH\]/gi)||[]).length;
+  var m=(text.match(/\[MEDIUM\]/gi)||[]).length;
+  var l=(text.match(/\[LOW\]/gi)||[]).length;
+  var ov=text.match(/Overall risk level:\s*\**(HIGH|MEDIUM|LOW)\**/i);
+  var level=ov?ov[1].toUpperCase():(h>2?'HIGH':h>0?'MEDIUM':m>0?'MEDIUM':'LOW');
+  return{h:h,m:m,l:l,level:level};
+}
 
-    const reportPanel = document.getElementById('panel-report');
-    reportPanel.innerHTML = `<div class="loadState">
-      <div class="loadMode">Full Document Analysis</div>
-      <div class="loadBar"><div class="loadFill"></div></div>
-      <div class="loadSub" id="fullLoadSub">Starting analysis…</div>
-      <div class="loadProgress" id="fullProgress">0 / ${modes.length}</div>
-    </div>`;
+function renderResult(panelId,title,text,elapsed,tokens){
+  var panel=document.getElementById(panelId);
+  var riskBar='';
+  if(mode==='risks'){
+    var s=getRiskScore(text);var pct=s.level==='HIGH'?85:s.level==='MEDIUM'?50:20;var cls=s.level.toLowerCase();
+    riskBar='<div class="riskScore"><div><div class="riskLabel '+cls+'">● OVERALL: '+s.level+' RISK</div><div class="riskCount">'+s.h+' HIGH · '+s.m+' MEDIUM · '+s.l+' LOW</div></div><div class="riskMeter" style="flex:1"><div class="riskFill '+cls+'" style="width:0%" id="riskBar"></div></div></div>';
+    setTimeout(function(){var b=document.getElementById('riskBar');if(b)b.style.width=pct+'%';},100);
+  }
+  panel.innerHTML='<div class="resultHdr"><div><div class="resultTitle">'+title+'</div><div class="resultFile">'+escHtml(fileName)+'</div></div><div><div class="resultMeta">'+elapsed+'s · '+tokens.toLocaleString()+' tokens</div><div class="resultActions"><button class="actBtn gold" onclick="exportSingle()">⬇ PDF</button><button class="actBtn" onclick="copyText()">Copy</button></div></div></div>'+riskBar+'<div class="mdBody">'+renderMd(text)+'</div>';
+}
 
-    const results = {};
-    for (let i = 0; i < modes.length; i++) {
-      const m = modes[i];
-      document.getElementById('fullLoadSub').textContent = `Analyzing: ${LABELS[m]}…`;
-      document.getElementById('fullProgress').textContent = `${i} / ${modes.length}`;
-      try {
-        const prompt = PROMPTS[m] + LANG_SUFFIX[currentLang];
-        const prevMode = mode;
-        mode = m;
-        const twoCallModes = ['summary','dates','clauses','definitions','compliance','obligations'];
-        if (twoCallModes.includes(m)) {
-          const r1 = await callAPI(prompt);
-          const trimmedR1 = r1.text.length > 3500 ? r1.text.substring(0, 3500) + '\n[truncated]' : r1.text;
-          const formatPrompt = FORMAT_TEMPLATES[m] + '\n\n' + trimmedR1;
+function showLoading(panelId,label){
+  document.getElementById(panelId).innerHTML='<div class="loadState"><div class="loadMode">'+label+'</div><div class="loadBar"><div class="loadFill"></div></div><div class="loadSub">Analyzing your document…</div></div>';
+}
+
+function showError(title,msg){
+  document.getElementById('panel-analysis').innerHTML='<div class="emptyState" style="opacity:.3;min-height:200px"><div class="emptyGlyph">§</div></div><div class="errBox"><strong>⚠ '+escHtml(title)+'</strong>'+escHtml(msg)+'</div>';
+}
+
+function setStatus(s){document.getElementById('statusPill').textContent='● '+s;}
+
+function exportSingle(){
+  var p=document.getElementById('panel-analysis');if(!p)return;
+  var src=p.querySelector('.mdBody')||p;
+  var opt={margin:[15,15],filename:'Lexis-'+mode+'-'+fileName.replace(/\.[^.]+$/,'')+'.pdf',html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}};
+  var w=document.createElement('div');
+  w.style.cssText='font-family:Georgia,serif;font-size:12px;line-height:1.7;color:#1a1a2e;padding:10px;background:#fff';
+  w.innerHTML='<h1 style="font-size:18px;border-bottom:2px solid #c9a84c;padding-bottom:8px;margin-bottom:12px">Lexis Intelligence — '+LABELS[mode]+'</h1><p style="font-size:10px;color:#888;margin-bottom:16px">'+escHtml(fileName)+' · '+new Date().toLocaleDateString()+'</p>'+src.innerHTML;
+  html2pdf().set(opt).from(w).save();
+}
+
+function exportPDF(){
+  var c=document.getElementById('panel-report');if(!c)return;
+  html2pdf().set({margin:[15,15],filename:'Lexis-FullReport-'+fileName.replace(/\.[^.]+$/,'')+'.pdf',html2canvas:{scale:2},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from(c).save();
+}
+
+function copyText(){
+  if(lastAnalysisText)navigator.clipboard.writeText(lastAnalysisText).then(function(){
+    var b=document.querySelector('.actBtn');if(b){b.textContent='✓ Copied';setTimeout(function(){b.textContent='Copy';},2000);}
+  });
+}
+
+function copyFull(){
+  if(window._fr){
+    var all=Object.keys(window._fr).map(function(k){return'=== '+LABELS[k]+' ===\n\n'+window._fr[k];}).join('\n\n\n');
+    navigator.clipboard.writeText(all).then(function(){alert('Copied to clipboard');});
+  }
+}
+
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+var esc=escHtml;
+
+</script>
+</body>
+</html>
