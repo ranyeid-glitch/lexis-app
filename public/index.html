@@ -775,8 +775,6 @@ NEVER use emojis, NEVER use numbered lists for risks, NEVER use "HIGH PRIORITY I
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          _fileType: fileExt,
-          _fileData: (includeDoc && fileB64 && officeExts.includes(fileExt)) ? fileB64 : undefined,
           model: 'claude-sonnet-4-20250514',
           max_tokens: 1000,
           system: 'You are Lexis, an expert legal document analyst. You are answering follow-up questions about a legal document that has already been analyzed. Be concise, precise, and use markdown formatting.',
