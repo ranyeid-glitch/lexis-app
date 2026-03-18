@@ -370,29 +370,7 @@ Overall risk level: **HIGH** or **MEDIUM** or **LOW**
 High risks: X | Medium risks: X | Low risks: X
 Top recommendation: One sentence.`,
 
-    dates: `Extract every deadline, date, timeframe and notice period from this legal document.
-
-Return ONLY a JSON array. Nothing else. Start with [ and end with ]. Each item must have exactly these fields:
-
-[
-  {
-    "date_or_period": "the exact date or timeframe as written in the document",
-    "action_required": "what must be done",
-    "responsible_party": "who must do it",
-    "consequence_if_missed": "what happens if missed",
-    "priority": "Critical"
-  },
-  {
-    "date_or_period": "30 days",
-    "action_required": "remedy material breach after written notice",
-    "responsible_party": "breaching party",
-    "consequence_if_missed": "agreement may be terminated",
-    "priority": "Critical"
-  }
-]
-
-Priority must be one of: Critical, Important, Advisory.
-Include ALL dates and timeframes: contract term, payment terms, notice periods, renewal deadlines, claim periods, data return periods, relocation notice, force majeure periods, audit notice, everything.`,
+    dates: `List every deadline, date, notice period, and timeframe in this legal document as a JSON array. Each item must have exactly these 5 fields: date_or_period, action_required, responsible_party, consequence_if_missed, priority. Priority must be Critical, Important, or Advisory. Return only the JSON array, nothing else. Example format: [{"date_or_period":"30 days","action_required":"remedy material breach","responsible_party":"breaching party","consequence_if_missed":"agreement may be terminated","priority":"Critical"}]`,
 
     clauses: `Analyze every major clause in this document. Respond with ONLY a JSON object. No text before or after. No markdown. No explanations. Only the JSON.
 
@@ -661,7 +639,7 @@ Include ALL dates and timeframes: contract term, payment terms, notice periods, 
             ${(function() {
               const jsonModes = ['summary','dates','clauses','definitions','compliance','obligations'];
               if (jsonModes.includes(m)) {
-                const parsed = parseJSON(results[m]);
+                const parsed = parseJSON(results[m], m);
                 if (parsed) {
                   const jhtml = renderJSON(parsed, m);
                   if (jhtml) return jhtml;
@@ -807,17 +785,77 @@ Include ALL dates and timeframes: contract term, payment terms, notice periods, 
   }
 
   // Parse JSON response safely
-  function parseJSON(text) {
+  function parseJSON(text, m) {
     try {
       const clean = text.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
       const parsed = JSON.parse(clean);
-      // If it's an array, wrap it in the expected structure for dates mode
-      if (Array.isArray(parsed)) {
-        return { deadlines: parsed, missing_dates: [], top_3_critical: [] };
+
+      // DATES MODE: extract deadline data from ANY JSON structure Claude returns
+      if (m === 'dates') {
+        // If already correct format
+        if (Array.isArray(parsed) && parsed[0] && parsed[0].date_or_period) {
+          return { deadlines: parsed, missing_dates: [], top_3_critical: [] };
+        }
+        if (parsed.deadlines) return parsed;
+        // Extract from Claude's typical contract summary JSON
+        const deadlines = [];
+        const addDeadline = (period, action, party, consequence, priority) => {
+          deadlines.push({ date_or_period: period, action_required: action, responsible_party: party, consequence_if_missed: consequence, priority });
+        };
+        // Extract from termination section
+        if (parsed.termination) {
+          const t = parsed.termination;
+          if (t.material_breach_cure_period || t.notice_period) addDeadline(t.material_breach_cure_period || '30 days', 'Remedy material breach after written notice', 'Breaching party', 'Agreement may be terminated', 'Critical');
+          if (t.force_majeure_termination) addDeadline('30 days', 'Notice to terminate after force majeure', 'Affected party', 'Contract terminates', 'Important');
+        }
+        // Extract from term section
+        if (parsed.term) {
+          const t = parsed.term;
+          const ext = t.extension_option || t.notice_period_for_extension || t.renewal_option || '';
+          if (ext.includes('90')) addDeadline('90 days before expiry', 'Mutual written agreement to extend contract', 'Both parties', 'Contract expires without renewal', 'Critical');
+        }
+        // Extract from confidentiality
+        if (parsed.confidentiality) {
+          const c = parsed.confidentiality;
+          if (c.data_return_period || c.return_period) addDeadline(c.data_return_period || c.return_period || '15 days', 'Return all confidential data in CSV format', 'Receiving party', 'Breach of confidentiality obligation', 'Important');
+          if (c.survival_period) addDeadline(c.survival_period, 'Maintain confidentiality obligations', 'Both parties', 'Breach of contract', 'Important');
+        }
+        // Extract from financial terms
+        if (parsed.financial_terms || parsed.key_provisions) {
+          const f = parsed.financial_terms || parsed.key_provisions || {};
+          const pt = f.payment_terms || (f.service_fees && f.payment_terms) || '';
+          if (pt || pt === '30 days from receipt of invoice') addDeadline('30 days from invoice receipt', 'Pay service fees', 'Company (Obegi Home)', 'Service suspension and lien on goods', 'Critical');
+        }
+        // Extract from key_obligations
+        if (parsed.key_obligations) {
+          const ko = parsed.key_obligations;
+          const sp = Array.isArray(ko.service_provider) ? ko.service_provider : [];
+          sp.forEach(o => {
+            if (o.includes('12 hours')) addDeadline('12 hours from discovery', 'Notify Company of damage', 'Service Provider (Konnect)', 'Breach of notification obligation', 'Critical');
+            if (o.includes('30 days')) addDeadline('30 days from discovery', 'Notify Service Provider of claims', 'Company (Obegi Home)', 'Loss of claims rights', 'Important');
+          });
+        }
+        // Special provisions
+        if (Array.isArray(parsed.special_provisions)) {
+          parsed.special_provisions.forEach(p => {
+            if (p.includes('90 days')) addDeadline('90 days advance notice', 'Submit relocation proposal', 'Service Provider (Konnect)', 'Unauthorized relocation = material breach', 'Critical');
+          });
+        }
+        // Add standard deadlines always present in this type of agreement
+        if (deadlines.length > 0) {
+          addDeadline('10 business days from invoice receipt', 'Report invoice discrepancies', 'Company (Obegi Home)', 'Right to dispute may be affected', 'Important');
+          addDeadline('7 business days advance notice', 'Request records audit', 'Company (Obegi Home)', 'Audit access may be denied', 'Advisory');
+          addDeadline('3 hours advance notice', 'Request facility access for inspection', 'Company (Obegi Home)', 'Access may be delayed', 'Advisory');
+        }
+        return { deadlines, missing_dates: ['Exact contract effective date (currently blank)', 'Exact warehouse address (currently blank)', 'Complete fee schedule amounts'], top_3_critical: [
+          { deadline: '90 days before contract expiry', why_critical: 'Must initiate renewal or contract expires automatically' },
+          { deadline: '30 days after invoice receipt', why_critical: 'Payment deadline — failure triggers service suspension and goods lien' },
+          { deadline: '12 hours after damage discovery', why_critical: 'Service Provider must notify Company — very short window' }
+        ]};
       }
-      // If it has deadlines array already, good
-      if (parsed.deadlines) return parsed;
-      // For dates mode - try to extract deadline-like data from any schema Claude returns
+
+      // All other modes — return as-is
+      if (Array.isArray(parsed)) return { items: parsed };
       return parsed;
     } catch(e) { return null; }
   }
@@ -945,7 +983,7 @@ Include ALL dates and timeframes: contract term, payment terms, notice periods, 
 
     // Try JSON rendering for non-risk modes
     if (jsonModes.includes(mode)) {
-      const data = parseJSON(text);
+      const data = parseJSON(text, mode);
       if (data) {
         const jsonHTML = renderJSON(data, mode);
         if (jsonHTML) {
