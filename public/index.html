@@ -384,27 +384,25 @@ Medium risks found: X
 Low risks found: X
 Top recommendation: One clear sentence.`,
 
-    dates: `You are a legal deadline specialist. Extract every date, deadline, and timeframe.
+    dates: `You are a legal deadline specialist. Extract every date, deadline, and timeframe from this document.
 
 ## Key Dates & Deadlines
 
-For each, use this format:
+For each date or deadline found, use this format:
 
-### [CRITICAL] Date or Timeframe
+#### Date or Timeframe
+**Priority:** Critical / Important / Advisory
 **Action required:** What must happen
-**Responsible party:** Who
-**Consequence if missed:** What happens
+**Responsible party:** Which party must act
+**Consequence if missed:** What happens if deadline is not met
 
 ---
 
-### [IMPORTANT] Date or Timeframe
-...
-
 ## Missing Dates
-Any dates that should be present but aren't.
+Any dates or timeframes that would normally be present in this type of document but are absent.
 
-## Critical Path
-The 3 most important deadlines and why.`,
+## The 3 Most Critical Deadlines
+List the top 3 deadlines in order of importance and explain why each is critical.`,
 
     clauses: `You are a contract law expert. Analyze this document clause by clause using markdown.
 
@@ -598,23 +596,7 @@ Remedies specified for breach.`,
         _fileData: sendFileData ? fileB64 : undefined,
         model: 'claude-sonnet-4-20250514',
         max_tokens: 2000,
-        system: `You are Lexis, an expert legal document analyst with 20+ years of experience across contracts, NDAs, employment law, real estate, compliance, regulations, and judicial decisions. Always use markdown formatting with clear headers and structure. Be thorough and precise.
-
-CRITICAL RULE FOR RISK ANALYSIS ONLY: When the user asks you to identify risks or red flags, format EVERY risk EXACTLY like this:
-
-### [HIGH] Title of risk
-**Clause:** reference
-**Explanation:** plain language explanation
-**Why it matters:** impact on reader
-**Ask a lawyer:** specific question
-
-### [MEDIUM] Title of risk
-...
-
-### [LOW] Title of risk
-...
-
-For ALL OTHER analysis types (summaries, dates, clauses, compliance, obligations, definitions) use clear markdown with headers, bullet points, and tables as appropriate. Do NOT use the [HIGH]/[MEDIUM]/[LOW] format for non-risk analyses.`,
+        system: 'You are Lexis, an expert legal document analyst with 20+ years of experience across contracts, NDAs, employment law, real estate, compliance, regulations, and judicial decisions. Follow the exact format and structure specified in each request. Use markdown with headers, tables, and bullet points as appropriate for each analysis type.',
         messages: chatHistory.length > 0 && !includeDoc ? chatHistory : [{ role: 'user', content }]
       })
     });
