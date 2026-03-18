@@ -322,12 +322,11 @@
   let documentContext = '';
 
   // ── PROMPTS ──
-  const PROMPTS = {
-
-    summary: `Analyze this legal document. Produce ONLY the following sections in this exact order. Do not add any other sections.
+  const FORMAT_TEMPLATES = {
+    summary: `The following is an analysis of a legal document. Reformat it into ONLY these sections. Nothing else.
 
 ## Document Type
-State the type of document in one sentence.
+[one sentence]
 
 ## Parties
 | Party | Role | Jurisdiction |
@@ -335,22 +334,163 @@ State the type of document in one sentence.
 | [name] | [role] | [country] |
 
 ## Core Purpose
-2-3 sentences only describing what this document does.
+[2-3 sentences]
 
 ## Key Commercial Terms
 | Term | Detail |
 |------|--------|
 | Duration | |
-| Payment | |
+| Payment terms | |
 | Key rates | |
+| Insurance | |
 | Governing law | |
 
 ## Obligations
-**[Party 1 name]:** bullet points of what they must do
-**[Party 2 name]:** bullet points of what they must do
+**[Party 1]:**
+- [obligation]
+
+**[Party 2]:**
+- [obligation]
 
 ## Verdict
-One paragraph: is this document Standard, Favorable to one party, or Requires negotiation? Why?`,
+[One paragraph: Standard / Favorable to [party] / Requires negotiation — and why]
+
+Here is the analysis to reformat:`,
+    dates: `The following deadlines were found in a legal document. Reformat into ONLY a table, missing dates, and top 3 critical. Nothing else.
+
+## Dates & Deadlines
+
+| Date or Timeframe | Action Required | Responsible Party | If Missed | Priority |
+|------------------|----------------|------------------|-----------|----------|
+| 30 days from invoice | Pay service fees | Company | Service suspension | Critical |
+| [add all other rows] | | | | |
+
+Priority = Critical, Important, or Advisory.
+
+## Missing Dates
+- [date that should exist but doesn't]
+
+## Top 3 Critical Deadlines
+1. [deadline] — [why critical]
+2. [deadline] — [why critical]
+3. [deadline] — [why critical]
+
+Here are the deadlines to reformat:`,
+    clauses: `The following clause analysis was extracted from a legal document. Reformat into ONLY a scorecard and clause cards. Nothing else.
+
+## Clause Scorecard
+| Standard | Favorable | Unfavorable | Unusual |
+|----------|-----------|-------------|---------|
+| [count] | [count] | [count] | [count] |
+
+---
+
+### [Clause Name] — STANDARD
+[plain language explanation]
+Concerns: [none / describe]
+
+---
+
+### [Clause Name] — UNFAVORABLE
+[plain language explanation]
+Concern: [specific concern]
+
+---
+
+Use only: STANDARD, FAVORABLE, UNFAVORABLE, or UNUSUAL after the dash. Cover every major clause.
+
+Here is the clause analysis to reformat:`,
+    definitions: `The following was extracted from a legal document about its defined terms and language. Reformat into ONLY these sections. Nothing else.
+
+## Defined Terms
+| Term | Definition | Concerns |
+|------|-----------|---------|
+| [term] | [definition] | [none or issue] |
+
+## Undefined but Important Terms
+- [term that is used but never defined]
+
+## Ambiguous Language
+**"[exact phrase]"** — found in [clause reference]
+- Interpretation 1: [meaning]
+- Interpretation 2: [meaning]
+- Risk: [what dispute could arise]
+
+## Inconsistencies
+- [term used differently in different places]
+
+Here is the content to reformat:`,
+    compliance: `The following compliance review was extracted from a legal document. Reformat into ONLY these sections. Nothing else.
+
+## Applicable Laws
+| Law or Regulation | Jurisdiction | How It Applies |
+|------------------|-------------|---------------|
+| [law name] | [country] | [brief explanation] |
+
+## Compliance Gaps
+| Missing Provision | Severity | Recommendation |
+|------------------|---------|---------------|
+| [what is missing] | High/Medium/Low | [what to add] |
+
+## Regulatory Red Flags
+- [provision that may conflict with law]
+
+## Jurisdiction
+[Is governing law appropriate? Any cross-border issues?]
+
+## Data Privacy
+- [any PDPL, GDPR, or data protection issues]
+
+Here is the compliance review to reformat:`,
+    obligations: `The following obligations mapping was extracted from a legal document. Reformat into ONLY these sections. Nothing else.
+
+## [Party 1 Name]
+
+### Must Do
+| Obligation | By When | If Breached |
+|-----------|---------|------------|
+| [obligation] | [deadline] | [consequence] |
+
+### Entitled To
+- [right] — [conditions]
+
+### Cannot Do
+- [restriction] — [scope] — [duration]
+
+---
+
+## [Party 2 Name]
+
+### Must Do
+| Obligation | By When | If Breached |
+|-----------|---------|------------|
+
+### Entitled To
+- [right] — [conditions]
+
+### Cannot Do
+- [restriction] — [scope] — [duration]
+
+---
+
+## Imbalances
+- [anything one-sided or disproportionate — highlighted clearly]
+
+## Enforcement
+[What remedies are specified for breach?]
+
+Here is the obligations mapping to reformat:`,
+  };
+
+  const PROMPTS = {
+
+    summary: `Extract the following information from this legal document:
+1. The document type
+2. All parties — name, role, jurisdiction
+3. The core purpose in 2-3 sentences
+4. Key commercial terms — duration, payment, rates, insurance, governing law
+5. Main obligations for each party
+6. Your overall assessment — is this standard, favorable to one party, or needs negotiation and why`,
 
     risks: `Identify every risk and red flag in this legal document.
 
@@ -388,104 +528,15 @@ Overall risk level: **HIGH** or **MEDIUM** or **LOW**
 High risks: X | Medium risks: X | Low risks: X
 Top recommendation: One sentence.`,
 
-    dates: `Find and list every deadline, date, notice period, and timeframe in this legal document. For each one explain what must happen, who is responsible, and what the consequence is if missed.`,
+    dates: `Find and list every deadline, date, notice period, and timeframe in this legal document. For each one explain what must happen, who is responsible, and what happens if it is missed.`,
 
-    clauses: `Analyze this document clause by clause. Produce ONLY the following. Do not add risk summaries or recommendations sections.
+    clauses: `Extract every major clause from this legal document. For each clause provide: the clause name, what it means in plain language, whether it is Standard / Favorable / Unfavorable / Unusual, and any specific concerns.`,
 
-For each major clause use this exact format:
+    definitions: `From this legal document extract: all explicitly defined terms and their definitions, any important terms that are used but never defined, any phrases that are ambiguous or could be interpreted in multiple ways, and any inconsistencies in how terms are used throughout the document.`,
 
-### [Clause Name] — STANDARD
-Plain language explanation of what this clause means.
-Any concerns: none or describe them.
+    compliance: `Review this legal document for regulatory compliance. Identify: all laws and regulations that apply, any required provisions that are missing, any provisions that may conflict with applicable law, jurisdiction analysis, and data privacy issues.`,
 
-or
-
-### [Clause Name] — UNFAVORABLE
-Plain language explanation.
-Concern: describe the specific concern.
-
-or
-
-### [Clause Name] — UNUSUAL
-Plain language explanation.
-Why unusual: explain.
-
-Use only: STANDARD, FAVORABLE, UNFAVORABLE, or UNUSUAL after the dash.
-
-End with:
-
-## Scorecard
-| Standard | Favorable | Unfavorable | Unusual |
-|----------|-----------|-------------|---------|
-| X | X | X | X |`,
-
-    definitions: `Analyze the defined terms and language in this document. Produce ONLY the following sections.
-
-## Defined Terms
-| Term | Definition | Concern |
-|------|-----------|---------|
-| [term] | [exact definition from document] | [none or issue] |
-
-## Undefined but Important Terms
-List terms used repeatedly that are never defined.
-
-## Ambiguous Language
-For each ambiguous phrase:
-**"[exact phrase]"** — found in [clause]
-- Meaning 1: [interpretation]
-- Meaning 2: [interpretation]
-- Risk: [what dispute could arise]
-
-## Inconsistencies
-List any terms used differently in different parts of the document.`,
-
-    compliance: `Review this document for regulatory compliance. Produce ONLY the following sections.
-
-## Applicable Laws
-| Law or Regulation | Jurisdiction | How It Applies |
-|------------------|-------------|---------------|
-| [law name] | [country/region] | [brief explanation] |
-
-## Compliance Gaps
-| Missing Provision | Required By | Severity | Recommendation |
-|------------------|------------|---------|---------------|
-| [what is missing] | [why required] | High/Medium/Low | [what to add] |
-
-## Regulatory Red Flags
-List any provisions that may conflict with applicable laws.
-
-## Jurisdiction
-Is the governing law clause appropriate? Any cross-border issues?
-
-## Data Privacy
-Any data protection, PDPL, or GDPR issues.`,
-
-    obligations: `Map every obligation, right, and restriction for each party. Produce ONLY the following. Do not add risk analysis.
-
-For each party:
-
-## [Party Name]
-
-### Must Do
-| Obligation | By When | If Breached |
-|-----------|---------|------------|
-| [obligation] | [deadline] | [consequence] |
-
-### Entitled To
-- [right] — [conditions]
-
-### Cannot Do
-- [restriction] — [scope] — [duration]
-
----
-
-After all parties:
-
-## Imbalances
-List any obligations that are one-sided or disproportionate.
-
-## Enforcement
-What remedies are specified for breach?`,
+    obligations: `Map every obligation, right, and restriction for each party in this legal document. For each party list what they must do (with deadlines and consequences), what they are entitled to do, and what they cannot do. Then identify any imbalances and what enforcement mechanisms exist.`,
 
     custom: null
   };
@@ -611,32 +662,12 @@ What remedies are specified for breach?`,
     try {
       let text, tokens;
 
-      if (mode === 'dates') {
-        // TWO-CALL APPROACH: Call 1 finds all deadlines naturally
+      const twoCallModes = ['summary','dates','clauses','definitions','compliance','obligations'];
+      if (twoCallModes.includes(mode)) {
+        // TWO-CALL APPROACH: Call 1 extracts, Call 2 formats
         const result1 = await callAPI(prompt);
-        const rawDeadlines = result1.text;
-
-        // Call 2: Claude reformats its own output into a clean table
-        const formatPrompt = `You found these deadlines in a legal document:
-
-${rawDeadlines}
-
-Now reformat this into ONLY a markdown table with these exact columns, followed by missing dates and top 3 critical deadlines. Nothing else.
-
-## Dates & Deadlines
-
-| Date or Timeframe | Action Required | Responsible Party | If Missed | Priority |
-|------------------|----------------|------------------|-----------|----------|
-[fill in every deadline as a row]
-
-## Missing Dates
-[list any dates that are blank or TBD]
-
-## Top 3 Critical Deadlines
-1. [deadline] — [why it is the most critical]
-2. [deadline] — [why]
-3. [deadline] — [why]`;
-
+        const template = FORMAT_TEMPLATES[mode];
+        const formatPrompt = template + '\n\n' + result1.text;
         const result2 = await callAPI(formatPrompt, false);
         text = result2.text;
         tokens = result1.tokens + result2.tokens;
@@ -704,9 +735,10 @@ Now reformat this into ONLY a markdown table with these exact columns, followed 
         const prompt = PROMPTS[m] + LANG_SUFFIX[currentLang];
         const prevMode = mode;
         mode = m;
-        if (m === 'dates') {
+        const twoCallModes = ['summary','dates','clauses','definitions','compliance','obligations'];
+        if (twoCallModes.includes(m)) {
           const r1 = await callAPI(prompt);
-          const formatPrompt = `You found these deadlines in a legal document:\n\n${r1.text}\n\nNow reformat into ONLY a markdown table + missing dates + top 3 critical. Nothing else.\n\n## Dates & Deadlines\n\n| Date or Timeframe | Action Required | Responsible Party | If Missed | Priority |\n|------------------|----------------|------------------|-----------|----------|\n[rows here]\n\n## Missing Dates\n[list]\n\n## Top 3 Critical Deadlines\n1. [deadline] — [why]\n2. [deadline] — [why]\n3. [deadline] — [why]`;
+          const formatPrompt = FORMAT_TEMPLATES[m] + '\n\n' + r1.text;
           const r2 = await callAPI(formatPrompt, false);
           results[m] = r2.text;
         } else {
