@@ -530,9 +530,12 @@ Top recommendation: One sentence.`,
       body: JSON.stringify({
         _fileType: fileExt,
         _fileData: sendFileData ? fileB64 : undefined,
+        _mode: mode,
         model: 'claude-sonnet-4-20250514',
         max_tokens: 2000,
-        system: 'You are Lexis, an expert legal document analyst with 20+ years of experience across contracts, NDAs, employment law, real estate, compliance, regulations, and judicial decisions. Follow the exact format and structure specified in each request. Use markdown with headers, tables, and bullet points as appropriate for each analysis type.',
+        system: ['summary','dates','clauses','definitions','compliance','obligations'].includes(mode)
+          ? 'You are a legal data extraction API. You MUST respond with ONLY a valid JSON object. No text before the JSON. No text after the JSON. No markdown code blocks. No explanations. No analysis prose. ONLY the raw JSON object starting with { and ending with }. Any response that is not pure JSON will cause a system error.'
+          : 'You are Lexis, an expert legal document analyst with 20+ years of experience across contracts, NDAs, employment law, real estate, compliance, regulations, and judicial decisions. Follow the exact format and structure specified in each request.',
         messages: chatHistory.length > 0 && !includeDoc ? chatHistory : [{ role: 'user', content }]
       })
     });
@@ -617,7 +620,10 @@ Top recommendation: One sentence.`,
       document.getElementById('fullProgress').textContent = `${i} / ${modes.length}`;
       try {
         const prompt = PROMPTS[m] + LANG_SUFFIX[currentLang];
+        const prevMode = mode;
+        mode = m; // set mode so callAPI uses correct system prompt
         const { text } = await callAPI(prompt);
+        mode = prevMode; // restore
         results[m] = text;
       } catch (err) {
         results[m] = `Error: ${err.message}`;
