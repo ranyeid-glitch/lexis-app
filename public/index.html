@@ -566,7 +566,9 @@ Remedies specified for breach.`,
   // ── API CALL ──
   async function callAPI(prompt, includeDoc = true) {
     const content = [];
-    if (includeDoc && fileB64) {
+    const officeExts = ['doc','docx','xlsx','xls','pptx'];
+    const isOffice = includeDoc && fileB64 && officeExts.includes(fileExt);
+    if (includeDoc && fileB64 && !isOffice) {
       content.push({ type: 'document', source: { type: 'base64', media_type: fileMime, data: fileB64 } });
     }
     content.push({ type: 'text', text: prompt });
@@ -612,7 +614,7 @@ Remedies specified for breach.`,
       // Seed chat history with document + first analysis
       chatHistory = [
         { role: 'user', content: [
-          { type: 'document', source: { type: 'base64', media_type: fileMime, data: fileB64 } },
+          ['pdf','txt','md','csv',''].includes(fileExt) ? { type: 'document', source: { type: 'base64', media_type: fileMime, data: fileB64 } } : { type: 'text', text: '[Office file - extracted by server]' },
           { type: 'text', text: prompt }
         ]},
         { role: 'assistant', content: text }
@@ -733,7 +735,7 @@ Remedies specified for breach.`,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           _fileType: fileExt,
-          _fileData: (includeDoc && fileB64 && !['pdf','txt','md','csv'].includes(fileExt)) ? fileB64 : undefined,
+          _fileData: isOffice ? fileB64 : undefined,
           model: 'claude-sonnet-4-20250514',
           max_tokens: 1000,
           system: 'You are Lexis, an expert legal document analyst. You are answering follow-up questions about a legal document that has already been analyzed. Be concise, precise, and use markdown formatting.',
