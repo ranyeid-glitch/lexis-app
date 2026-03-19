@@ -536,12 +536,16 @@ function buildExecSummary(text){
 
     lines.forEach(function(line){
       var trimmed=line.trim();
-      if(trimmed.match(/^##\s+What This Contract Does/i)){current='what';buf=[];}
-      else if(trimmed.match(/^##\s+Financial Exposure/i)){if(current)sections[current]=buf.join('\n');current='exposure';buf=[];}
-      else if(trimmed.match(/^##\s+Risks/i)){if(current)sections[current]=buf.join('\n');current='risks';buf=[];}
-      else if(trimmed.match(/^##\s+Before Signing/i)){if(current)sections[current]=buf.join('\n');current='before';buf=[];}
-      else if(trimmed.match(/^##\s+Verdict/i)){if(current)sections[current]=buf.join('\n');current='verdict';buf=[];}
-      else if(current){buf.push(line);}
+      // Fuzzy matching — handles variations in Claude's headings
+      if(trimmed.match(/^#+\s/)){
+        var low=trimmed.toLowerCase();
+        if(low.match(/what this contract|what it does|contract does|contract overview/)){current='what';buf=[];}
+        else if(low.match(/financial exposure|financial risk|exposure/)){if(current)sections[current]=buf.join('\n');current='exposure';buf=[];}
+        else if(low.match(/risk|board attention|attention/)){if(current)sections[current]=buf.join('\n');current='risks';buf=[];}
+        else if(low.match(/before signing|negotiat|action/)){if(current)sections[current]=buf.join('\n');current='before';buf=[];}
+        else if(low.match(/verdict|recommendation|decision/)){if(current)sections[current]=buf.join('\n');current='verdict';buf=[];}
+        else if(current){buf.push(line);}
+      } else if(current){buf.push(line);}
     });
     if(current)sections[current]=buf.join('\n');
 
@@ -640,8 +644,7 @@ function buildExecSummary(text){
       +'</div>'
       +'</div>'
 
-      // Also show full text below for reference
-      +'<div class="mdBody" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">'+renderMd(text)+'</div>';
+      ;
 
     return html;
   }catch(e){
@@ -1070,13 +1073,20 @@ async function runComparison(){
 function exportExecPDF(){
   var panel=document.getElementById('panel-analysis');
   if(!panel)return;
-  var execWrap=panel.querySelector('.execWrap');
-  if(!execWrap){exportSingle();return;}
-  var opt={margin:[10,10],filename:'Lexis-ExecutiveSummary-'+fileName.replace(/\.[^.]+$/,'')+'.pdf',html2canvas:{scale:1.5,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}};
-  var w=document.createElement('div');
-  w.style.cssText='font-family:Georgia,serif;font-size:12px;line-height:1.7;color:#1a1a2e;background:#fff';
-  w.innerHTML=execWrap.outerHTML;
-  html2pdf().set(opt).from(w).save();
+  // Clone the full panel and use html2pdf to capture it as rendered
+  var clone=panel.cloneNode(true);
+  // Remove action buttons from clone
+  var btns=clone.querySelectorAll('.actBtn,.execFooter button');
+  btns.forEach(function(b){b.style.display='none';});
+  var opt={
+    margin:[10,10],
+    filename:'Lexis-ExecutiveSummary-'+fileName.replace(/\.[^.]+$/,'')+'.pdf',
+    html2canvas:{scale:1.5,useCORS:true,backgroundColor:'#ffffff'},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+  };
+  // Apply white background and font
+  clone.style.cssText='font-family:Georgia,serif;font-size:12px;line-height:1.7;color:#1a1a2e;background:#fff;padding:0';
+  html2pdf().set(opt).from(clone).save();
 }
 
 function exportComparisonPDF(){
