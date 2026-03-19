@@ -522,44 +522,84 @@ function getScoreColor(n){return n>=70?'var(--green)':n>=50?'#d4820a':'var(--red
 function getScoreLabel(n){return n>=70?'LOW RISK':n>=50?'MEDIUM RISK':'HIGH RISK';}
 
 function buildScorecard(text){
-  var om=text.match(/Overall:\s*(\d+)\/100/i);
-  var overall=om?parseInt(om[1]):0;
-  if(!overall)return null;
-  var dims=['Commercial','Legal','Operational','Compliance'];
-  var ds={};var dn={};
-  dims.forEach(function(d){
-    var re=new RegExp('\|\s*'+d+'\s*\|\s*(\d+)\s*\|\s*([^|\n]+)','i');
-    var m=text.match(re);
-    if(m){ds[d]=parseInt(m[1]);dn[d]=m[2].trim();}
-    else{ds[d]=overall;dn[d]='';}
-  });
-  var color=getScoreColor(overall);
-  var label=getScoreLabel(overall);
-  var html='<div style="margin-bottom:24px;padding:20px;border:1px solid var(--border)">'
-    +'<div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px">'
-    +"<div><span style=\"font-family:Georgia,serif;font-size:56px;font-weight:600;color:"+color+"\">"+overall+"</span>"
-    +'<span style="font-family:Georgia,serif;font-size:24px;color:var(--muted)">/100</span>'
-    +'<div style="font-family:monospace;font-size:11px;color:'+color+';letter-spacing:.1em;margin-top:4px">● '+label+'</div></div>'
-    +'<div style="text-align:right;font-size:12px;color:var(--muted);line-height:1.8">4 dimensions scored<br>Commercial · Legal · Operational · Compliance</div>'
-    +'</div>'
-    +'<div style="height:10px;background:var(--border);border-radius:5px;overflow:hidden;margin-bottom:4px">'
-    +'<div id="mainScoreFill" style="height:100%;width:0%;background:'+color+';border-radius:5px;transition:width 1s ease"></div></div>'
-    +'<div style="display:flex;justify-content:space-between;font-family:monospace;font-size:9px;color:var(--muted);margin-bottom:20px"><span>HIGH RISK</span><span>LOW RISK</span></div>'
-    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">';
-  dims.forEach(function(d){
-    var s=ds[d]||0;var c=getScoreColor(s);
-    html+='<div style="border:1px solid var(--border);padding:14px 12px;text-align:center">'
-      +'<div style="font-family:monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">'+d+'</div>'
-      +'<div style="font-family:Georgia,serif;font-size:32px;font-weight:600;color:'+c+';line-height:1;margin-bottom:8px">'+s+'</div>'
-      +'<div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:8px">'
-      +'<div style="height:100%;width:'+s+'%;background:'+c+';border-radius:3px"></div></div>'
-      +'<div style="font-size:11px;color:var(--muted);line-height:1.4">'+escHtml(dn[d])+'</div>'
-      +'</div>';
-  });
-  html+='</div></div>';
-  setTimeout(function(){var f=document.getElementById('mainScoreFill');if(f)f.style.width=overall+'%';},100);
-  return html;
+  try {
+    // Step 1: Extract overall score — format: "Overall: 63/100"
+    var overall = 0;
+    var lines = text.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      var m = lines[i].match(/Overall[^:]*:\s*(\d+)\s*\/\s*100/i);
+      if (m) { overall = parseInt(m[1]); break; }
+    }
+    if (!overall) return null;
+
+    // Step 2: Extract dimension table rows
+    // Format: "| Commercial | 48 | finding text |"
+    var dims = ['Commercial','Legal','Operational','Compliance'];
+    var ds = {}; var dn = {};
+    dims.forEach(function(d) { ds[d] = 0; dn[d] = ''; });
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (line.indexOf('|') === -1) continue;
+      var parts = line.split('|').map(function(p){ return p.trim(); }).filter(function(p){ return p.length > 0; });
+      if (parts.length < 2) continue;
+      dims.forEach(function(d) {
+        if (parts[0].toLowerCase() === d.toLowerCase()) {
+          var score = parseInt(parts[1]);
+          if (!isNaN(score)) {
+            ds[d] = score;
+            dn[d] = parts[2] || '';
+          }
+        }
+      });
+    }
+
+    // Fill missing dimensions with overall score
+    dims.forEach(function(d) { if (!ds[d]) ds[d] = overall; });
+
+    // Step 3: Build scorecard HTML
+    var color = getScoreColor(overall);
+    var label = getScoreLabel(overall);
+
+    var dimsHtml = '';
+    dims.forEach(function(d) {
+      var s = ds[d]; var c = getScoreColor(s);
+      dimsHtml += '<div style="border:1px solid var(--border);padding:14px 12px;text-align:center">'
+        + '<div style="font-family:monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">' + d + '</div>'
+        + '<div style="font-family:Georgia,serif;font-size:32px;font-weight:600;color:' + c + ';line-height:1;margin-bottom:8px">' + s + '</div>'
+        + '<div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:8px">'
+        + '<div style="height:100%;width:' + s + '%;background:' + c + ';border-radius:3px"></div></div>'
+        + '<div style="font-size:11px;color:var(--muted);line-height:1.4">' + escHtml(dn[d]) + '</div>'
+        + '</div>';
+    });
+
+    var html = '<div style="margin-bottom:24px;padding:20px;border:1px solid var(--border)">'
+      + '<div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px">'
+      + '<div>'
+      + '<span style="font-family:Georgia,serif;font-size:56px;font-weight:600;color:' + color + '">' + overall + '</span>'
+      + '<span style="font-family:Georgia,serif;font-size:24px;color:var(--muted)">/100</span>'
+      + '<div style="font-family:monospace;font-size:11px;color:' + color + ';letter-spacing:.1em;margin-top:4px">● ' + label + '</div>'
+      + '</div>'
+      + '<div style="text-align:right;font-size:12px;color:var(--muted);line-height:1.8">4 dimensions scored<br>Commercial · Legal · Operational · Compliance</div>'
+      + '</div>'
+      + '<div style="height:10px;background:var(--border);border-radius:5px;overflow:hidden;margin-bottom:4px">'
+      + '<div id="mainScoreFill" style="height:100%;width:0%;background:' + color + ';border-radius:5px;transition:width 1s ease"></div>'
+      + '</div>'
+      + '<div style="display:flex;justify-content:space-between;font-family:monospace;font-size:9px;color:var(--muted);margin-bottom:20px">'
+      + '<span>HIGH RISK</span><span>LOW RISK</span></div>'
+      + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">'
+      + dimsHtml
+      + '</div></div>';
+
+    setTimeout(function(){ var f = document.getElementById('mainScoreFill'); if(f) f.style.width = overall + '%'; }, 100);
+    return html;
+
+  } catch(e) {
+    console.error('buildScorecard error:', e);
+    return null;
+  }
 }
+
 
 function renderResult(panelId,title,text,elapsed,tokens){
   var panel=document.getElementById(panelId);
