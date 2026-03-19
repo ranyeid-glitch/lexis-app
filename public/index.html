@@ -526,9 +526,32 @@ function buildScorecard(text){
     // Step 1: Extract overall score — format: "Overall: 63/100"
     var overall = 0;
     var lines = text.split('\n');
+    // Try multiple patterns Claude might use
+    var patterns = [
+      /Overall[^:]*:\s*(\d+)\s*\/\s*100/i,
+      /Overall\s+Score[^:]*:\s*(\d+)/i,
+      /Score[^:]*:\s*(\d+)\s*\/\s*100/i,
+      /(\d+)\s*\/\s*100\s*[\u2014\-]/,
+      /[\u2014\-]\s*(HIGH|MEDIUM|LOW).*?(\d+)\s*\/\s*100/i
+    ];
     for (var i = 0; i < lines.length; i++) {
-      var m = lines[i].match(/Overall[^:]*:\s*(\d+)\s*\/\s*100/i);
-      if (m) { overall = parseInt(m[1]); break; }
+      for (var p = 0; p < patterns.length; p++) {
+        var m = lines[i].match(patterns[p]);
+        if (m) {
+          // Get the last capture group that is a number
+          var num = parseInt(m[m.length-1]);
+          if (!isNaN(num) && num > 0 && num <= 100) { overall = num; break; }
+          // Try first capture group
+          num = parseInt(m[1]);
+          if (!isNaN(num) && num > 0 && num <= 100) { overall = num; break; }
+        }
+      }
+      if (overall) break;
+    }
+    // Last resort: find any "X/100" in the text
+    if (!overall) {
+      var fallback = text.match(/(\d+)\s*\/\s*100/);
+      if (fallback) overall = parseInt(fallback[1]);
     }
     if (!overall) return null;
 
@@ -726,12 +749,26 @@ function exportNegotiationMemo(){
 }
 
 function exportSingle(){
-  var p=document.getElementById('panel-analysis');if(!p)return;
-  var src=p.querySelector('.mdBody')||p;
-  var opt={margin:[15,15],filename:'Lexis-'+mode+'-'+fileName.replace(/\.[^.]+$/,'')+'.pdf',html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}};
+  var p=document.getElementById('panel-analysis');
+  if(!p)return;
+
+  // Remove the header buttons from the clone so they don't appear in PDF
+  var clone=p.cloneNode(true);
+  var hdr=clone.querySelector('.resultHdr');
+  if(hdr)hdr.parentNode.removeChild(hdr);
+
+  var opt={
+    margin:[15,15],
+    filename:'Lexis-'+mode+'-'+fileName.replace(/\.[^.]+$/,'')+'.pdf',
+    html2canvas:{scale:1.5,useCORS:true},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+  };
   var w=document.createElement('div');
   w.style.cssText='font-family:Georgia,serif;font-size:12px;line-height:1.7;color:#1a1a2e;padding:10px;background:#fff';
-  w.innerHTML='<h1 style="font-size:18px;border-bottom:2px solid #c9a84c;padding-bottom:8px;margin-bottom:12px">Lexis Intelligence — '+LABELS[mode]+'</h1><p style="font-size:10px;color:#888;margin-bottom:16px">'+escHtml(fileName)+' · '+new Date().toLocaleDateString()+'</p>'+src.innerHTML;
+  w.innerHTML=
+    '<h1 style="font-size:18px;border-bottom:2px solid #c9a84c;padding-bottom:8px;margin-bottom:12px">Lexis Intelligence — '+LABELS[mode]+'</h1>'
+    +'<p style="font-size:10px;color:#888;margin-bottom:16px">'+escHtml(fileName)+' · '+new Date().toLocaleDateString()+'</p>'
+    +clone.innerHTML;
   html2pdf().set(opt).from(w).save();
 }
 
