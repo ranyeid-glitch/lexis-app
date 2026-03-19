@@ -236,8 +236,9 @@ var PROMPTS={
   clauses:'Extract every major clause. For each: clause name, plain language meaning, whether Standard/Favorable/Unfavorable/Unusual, and specific concerns.',
   definitions:'List: top 15 defined terms with definitions, up to 5 undefined important terms, up to 5 ambiguous phrases with two interpretations each, key inconsistencies.',
   compliance:'List: applicable laws/regulations (max 6), missing provisions with severity (max 6), provisions conflicting with law (max 4), jurisdiction assessment, data privacy issues.',
-  obligations:'List obligations for EACH party separately. For Party 1 (client/company): list their obligations with deadlines and consequences, their rights, their restrictions. Then for Party 2 (service provider): list their obligations with deadlines and consequences, their rights, their restrictions. Keep each party section equal in detail. Then note imbalances and enforcement.',
-  custom:null
+  obligations:'List ONLY the client/company obligations in this legal document: their obligations with deadlines and consequences, their rights, their restrictions. Be thorough and specific.',
+  custom:null,
+  obligations2:'List ONLY the service provider obligations in this legal document: their obligations with deadlines and consequences, their rights, their restrictions. Be thorough and specific.'
 };
 
 var LABELS={summary:'Plain Language Summary',risks:'Risk & Red Flag Analysis',dates:'Key Dates & Deadlines',clauses:'Clause-Level Analysis',definitions:'Definitions & Cross-References',compliance:'Compliance Review',obligations:'Rights & Obligations Map',custom:'Custom Analysis'};
@@ -340,9 +341,16 @@ async function analyze(){
   var t0=Date.now();
   try{
     var text,tokens;
-    if(TWO_CALL.indexOf(mode)>-1){
+    if(mode==='obligations'){
+      var r1a=await callAPI(prompt);
+      var p2=PROMPTS.obligations2+LANG_SUFFIX[currentLang];
+      var r1b=await callAPI(p2);
+      var combined='PARTY 1 (CLIENT):\n'+r1a.text.substring(0,2000)+'\n\nPARTY 2 (SERVICE PROVIDER):\n'+r1b.text.substring(0,2000);
+      var r2=await callFormat(FMT[mode]+'\n\n'+combined);
+      text=r2.text;tokens=r1a.tokens+r1b.tokens+r2.tokens;
+    } else if(TWO_CALL.indexOf(mode)>-1){
       var r1=await callAPI(prompt);
-      var trimmed=(mode==='obligations'&&r1.text.length>4000)?r1.text.substring(0,4000)+'\n[truncated]':r1.text.length>2500?r1.text.substring(0,2500)+'\n[truncated]':r1.text;
+      var trimmed=r1.text.length>2500?r1.text.substring(0,2500)+'\n[truncated]':r1.text;
       var r2=await callFormat(FMT[mode]+'\n\n'+trimmed);
       text=r2.text;tokens=r1.tokens+r2.tokens;
     } else {
@@ -381,9 +389,16 @@ async function runFullAnalysis(){
     try{
       var p=PROMPTS[m]+LANG_SUFFIX[currentLang];
       var pm=mode;mode=m;
-      if(TWO_CALL.indexOf(m)>-1){
+      if(m==='obligations'){
+        var ra=await callAPI(p);
+        var p2b=PROMPTS.obligations2+LANG_SUFFIX[currentLang];
+        var rb=await callAPI(p2b);
+        var comb='PARTY 1 (CLIENT):\n'+ra.text.substring(0,2000)+'\n\nPARTY 2 (SERVICE PROVIDER):\n'+rb.text.substring(0,2000);
+        var r2=await callFormat(FMT[m]+'\n\n'+comb);
+        results[m]=r2.text;
+      } else if(TWO_CALL.indexOf(m)>-1){
         var r1=await callAPI(p);
-        var tr=(m==='obligations'&&r1.text.length>4000)?r1.text.substring(0,4000)+'\n[truncated]':r1.text.length>2500?r1.text.substring(0,2500)+'\n[truncated]':r1.text;
+        var tr=r1.text.length>2500?r1.text.substring(0,2500)+'\n[truncated]':r1.text;
         var r2=await callFormat(FMT[m]+'\n\n'+tr);
         results[m]=r2.text;
       } else {
