@@ -1074,30 +1074,25 @@ function exportExecPDF(){
   var panel=document.getElementById('panel-analysis');
   if(!panel)return;
 
-  // Target only the execWrap — not the full panel
   var execWrap=panel.querySelector('.execWrap');
   if(!execWrap){exportSingle();return;}
 
-  // Clone only the execWrap
   var clone=execWrap.cloneNode(true);
 
-  // Hide the footer export button in the clone
+  // Hide footer button
   var footer=clone.querySelector('.execFooter');
   if(footer)footer.style.display='none';
 
-  // Wrap in a clean container with explicit dimensions
-  var container=document.createElement('div');
-  container.style.cssText='width:794px;background:#fff;font-family:Georgia,serif;font-size:13px;line-height:1.7;color:#1a1a2e;';
-  container.appendChild(clone);
+  // Let html2pdf control sizing — no fixed width
+  clone.style.cssText='background:#fff;font-family:Georgia,serif;font-size:12px;line-height:1.6;color:#1a1a2e;';
 
   var opt={
-    margin:[8,8],
+    margin:[15,15,15,15],
     filename:'Lexis-ExecutiveSummary-'+fileName.replace(/\.[^.]+$/,'')+'.pdf',
-    html2canvas:{scale:1.5,useCORS:true,backgroundColor:'#ffffff',logging:false},
-    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-    pagebreak:{mode:'avoid-all'}
+    html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,windowWidth:800},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
   };
-  html2pdf().set(opt).from(container).save();
+  html2pdf().set(opt).from(clone).save();
 }
 
 function exportComparisonPDF(){
