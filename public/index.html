@@ -264,7 +264,9 @@ var PROMPTS={
 3. OPERATIONAL RISK (KPIs, obligations, termination, force majeure)
 4. COMPLIANCE RISK (regulatory requirements, data protection, tax, permits)
 
-For each: give a score, the top positive finding, and the top negative finding. Then give an overall score (average of 4), top 3 key findings across all dimensions, and a one-sentence recommendation including projected score after negotiation.`,
+For each: give a score, the top positive finding, and the top negative finding. Then give an overall score (average of 4) and top 3 key findings across all dimensions.
+
+You MUST end your response with a Recommendation section. This section is mandatory and must include: the specific clauses to fix, the projected score after negotiation, and one clear action sentence the user should take before signing.`,
 
     negotiate:`Review this legal document and identify every clause that should be negotiated. For each clause provide the exact current contract language and a specific suggested redline replacement.
 
@@ -286,13 +288,14 @@ Use EXACTLY this format for every clause:
 
 ---
 
-Order from highest to lowest priority. Cover all HIGH and MEDIUM risk clauses. End with:
+Order from highest to lowest priority. Cover all HIGH and MEDIUM risk clauses.
 
+You MUST end your response with a Negotiation Summary. This section is mandatory and must contain all four of these items:
 ## Negotiation Summary
 Total clauses to negotiate: X
 Estimated sessions needed: X
-Opening position: [which clause to lead with and why]
-Walk-away clause: [the one clause that is non-negotiable]`,
+Opening position: which clause to lead with and why
+Walk-away clause: the one clause that is absolutely non-negotiable and why`,
   obligations2:'List ONLY the service provider obligations in this legal document: their obligations with deadlines and consequences, their rights, their restrictions. Be thorough and specific.'
 };
 
@@ -405,7 +408,9 @@ async function analyze(){
       text=r2.text;tokens=r1a.tokens+r1b.tokens+r2.tokens;
     } else if(TWO_CALL.indexOf(mode)>-1){
       var r1=await callAPI(prompt);
-      var trimmed=r1.text.length>2500?r1.text.substring(0,2500)+'\n[truncated]':r1.text;
+      var templateLen=FMT[mode]?FMT[mode].length:0;
+      var maxChars=Math.max(2000,Math.min(8000,(15000-Math.floor(templateLen/4))*4));
+      var trimmed=r1.text.length>maxChars?r1.text.substring(0,maxChars)+'\n[...truncated for length]':r1.text;
       var r2=await callFormat(FMT[mode]+'\n\n'+trimmed);
       text=r2.text;tokens=r1.tokens+r2.tokens;
     } else {
@@ -453,7 +458,9 @@ async function runFullAnalysis(){
         results[m]=r2.text;
       } else if(TWO_CALL.indexOf(m)>-1){
         var r1=await callAPI(p);
-        var tr=r1.text.length>2500?r1.text.substring(0,2500)+'\n[truncated]':r1.text;
+        var tplLen=FMT[m]?FMT[m].length:0;
+          var maxCh=Math.max(2000,Math.min(8000,(15000-Math.floor(tplLen/4))*4));
+          var tr=r1.text.length>maxCh?r1.text.substring(0,maxCh)+'\n[...truncated for length]':r1.text;
         var r2=await callFormat(FMT[m]+'\n\n'+tr);
         results[m]=r2.text;
       } else {
