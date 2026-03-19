@@ -37,7 +37,7 @@ const FMT = {
   negotiate: "The following negotiation analysis was extracted. Reformat into ONLY clause cards and a summary.\n\n### [HIGH] Clause name - Section reference\n**Current language:** exact quote from contract\n**Why it must change:** one sentence\n**Suggested redline:** complete replacement language\n**Negotiation note:** one sentence\n\n---\n\n### [MEDIUM] Clause name - Section reference\n**Current language:** exact quote\n**Why it must change:** explanation\n**Suggested redline:** replacement language\n**Negotiation note:** how to present\n\n---\n\n## Negotiation Summary\nTotal clauses to negotiate: X\nEstimated sessions needed: X\nOpening position: which clause to lead with and why\nWalk-away clause: the one non-negotiable clause\n\nHere is the negotiation analysis to reformat:"
 };
 
-const TWO_CALL_MODES = ['summary','dates','clauses','definitions','compliance','negotiate','score'];
+const TWO_CALL_MODES = ['summary','dates','clauses','definitions','compliance','negotiate','score','exec'];
 
 function callAnthropic(payload) {
   return new Promise((resolve, reject) => {
