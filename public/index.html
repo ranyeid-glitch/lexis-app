@@ -108,6 +108,9 @@ body{background:var(--cream);font-family:'IBM Plex Sans',sans-serif;color:var(--
 .sevBadge.HIGH{background:var(--red);color:#fff;}
 .sevBadge.MEDIUM{background:#d4820a;color:#fff;}
 .sevBadge.LOW{background:var(--green);color:#fff;}
+  .negCurrent{background:#fdf0f0;border-left:3px solid var(--red);padding:8px 12px;margin:8px 0;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--red);}
+  .negRedline{background:#f0f7f4;border-left:3px solid var(--green);padding:8px 12px;margin:8px 0;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--green);}
+  .negLabel{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
 .chatWrap{display:flex;flex-direction:column;height:calc(100vh - 62px - 45px);}
 .chatMessages{flex:1;overflow-y:auto;padding:20px 28px;display:flex;flex-direction:column;gap:14px;}
 .chatMsg{max-width:85%;}
@@ -169,6 +172,7 @@ input[type="file"]{display:none;}
         <button class="modeBtn" data-mode="compliance" onclick="pickMode(this)"><span class="mi">✅</span><span class="ml">Compliance Check</span></button>
         <button class="modeBtn" data-mode="obligations" onclick="pickMode(this)"><span class="mi">⚡</span><span class="ml">Rights & Obligations</span></button>
         <button class="modeBtn" data-mode="custom" onclick="pickMode(this)"><span class="mi">💬</span><span class="ml">Ask Anything</span></button>
+        <button class="modeBtn" data-mode="negotiate" onclick="pickMode(this)" style="grid-column:1/-1;border-color:var(--gold);"><span class="mi">✍</span><span class="ml">Negotiate — Redline Suggestions</span></button>
       </div>
     </div>
     <div class="customBox" id="customBox">
@@ -226,6 +230,7 @@ var FMT={
 
   compliance:'The following compliance review was extracted. Reformat into ONLY these sections, nothing else:\n\n## Applicable Laws\n| Law or Regulation | Jurisdiction | How It Applies |\n|------------------|-------------|----------------|\n| law name | country | explanation |\n\n## Compliance Gaps\n| Missing Provision | Severity | Recommendation |\n|------------------|---------|----------------|\n| what is missing | High/Medium/Low | what to add |\n\n## Regulatory Red Flags\n- provision conflicting with law\n\n## Jurisdiction\n[Is governing law appropriate?]\n\n## Data Privacy\n- data protection issues\n\nHere is the review to reformat:',
 
+  negotiate:'The following negotiation analysis was extracted from a legal document. Reformat into ONLY clause cards and a summary. Nothing else.\n\nFor each clause use exactly this format:\n\n### [HIGH] Clause name — Section reference\n**Current language:** \"exact quote from contract\"\n**Why it must change:** one sentence\n**Suggested redline:** \"complete replacement language\"\n**Negotiation note:** one sentence on how to present this\n\n---\n\n### [MEDIUM] Clause name — Section reference\n**Current language:** \"exact quote\"\n**Why it must change:** explanation\n**Suggested redline:** \"replacement language\"\n**Negotiation note:** how to present\n\n---\n\nEnd with:\n\n## Negotiation Summary\nTotal clauses to negotiate: X\nEstimated sessions needed: X\nOpening position: which clause to lead with and why\nWalk-away clause: the one non-negotiable clause\n\nHere is the negotiation analysis to reformat:',
   obligations:'The following obligations mapping was extracted. Reformat into ONLY these sections, nothing else:\n\n## [Party 1 Name]\n\n### Must Do\n| Obligation | By When | If Breached |\n|-----------|---------|-------------|\n| obligation | deadline | consequence |\n\n### Entitled To\n- right — conditions\n\n### Cannot Do\n- restriction — scope\n\n---\n\n## [Party 2 Name]\n\n### Must Do\n| Obligation | By When | If Breached |\n|-----------|---------|-------------|\n\n### Entitled To\n- right — conditions\n\n### Cannot Do\n- restriction — scope\n\n---\n\n## Imbalances\n- anything one-sided\n\n## Enforcement\n[remedies for breach]\n\nHere is the mapping to reformat:'
 };
 
@@ -238,13 +243,40 @@ var PROMPTS={
   compliance:'List: applicable laws/regulations (max 6), missing provisions with severity (max 6), provisions conflicting with law (max 4), jurisdiction assessment, data privacy issues.',
   obligations:'List ONLY the client/company obligations in this legal document: their obligations with deadlines and consequences, their rights, their restrictions. Be thorough and specific.',
   custom:null,
+  negotiate:`Review this legal document and identify every clause that should be negotiated. For each clause provide the exact current contract language and a specific suggested redline replacement.
+
+Use EXACTLY this format for every clause:
+
+### [HIGH] Clause Name — Section Reference
+**Current language:** "exact quote from the contract"
+**Why it must change:** one sentence explanation
+**Suggested redline:** "complete replacement language ready to use"
+**Negotiation note:** one sentence on how to present this to the other party
+
+---
+
+### [MEDIUM] Clause Name — Section Reference
+**Current language:** "exact quote"
+**Why it must change:** explanation
+**Suggested redline:** "replacement language"
+**Negotiation note:** how to present
+
+---
+
+Order from highest to lowest priority. Cover all HIGH and MEDIUM risk clauses. End with:
+
+## Negotiation Summary
+Total clauses to negotiate: X
+Estimated sessions needed: X
+Opening position: [which clause to lead with and why]
+Walk-away clause: [the one clause that is non-negotiable]`,
   obligations2:'List ONLY the service provider obligations in this legal document: their obligations with deadlines and consequences, their rights, their restrictions. Be thorough and specific.'
 };
 
-var LABELS={summary:'Plain Language Summary',risks:'Risk & Red Flag Analysis',dates:'Key Dates & Deadlines',clauses:'Clause-Level Analysis',definitions:'Definitions & Cross-References',compliance:'Compliance Review',obligations:'Rights & Obligations Map',custom:'Custom Analysis'};
-var ICONS={summary:'📋',risks:'🚨',dates:'📅',clauses:'🔍',definitions:'📖',compliance:'✅',obligations:'⚡',custom:'💬'};
+var LABELS={summary:'Plain Language Summary',risks:'Risk & Red Flag Analysis',dates:'Key Dates & Deadlines',clauses:'Clause-Level Analysis',definitions:'Definitions & Cross-References',compliance:'Compliance Review',obligations:'Rights & Obligations Map',custom:'Custom Analysis',negotiate:'Negotiation Suggestions'};
+var ICONS={summary:'📋',risks:'🚨',dates:'📅',clauses:'🔍',definitions:'📖',compliance:'✅',obligations:'⚡',custom:'💬',negotiate:'✍'};
 var LANG_SUFFIX={en:'',ar:'\n\nIMPORTANT: Respond entirely in Arabic.',fr:'\n\nIMPORTANT: Respond entirely in French.'};
-var TWO_CALL=['summary','dates','clauses','definitions','compliance','obligations'];
+var TWO_CALL=['summary','dates','clauses','definitions','compliance','obligations','negotiate'];
 
 function onDragOver(e){e.preventDefault();document.getElementById('dropZone').classList.add('drag');}
 function onDragLeave(){document.getElementById('dropZone').classList.remove('drag');}
@@ -445,6 +477,12 @@ function renderMd(text){
   html=html.replace(/<h3>\[MEDIUM\]\s*(.*?)<\/h3>/g,'<div class="sevCard MEDIUM"><span class="sevBadge MEDIUM">MEDIUM</span><strong>$1</strong></div>');
   html=html.replace(/<h3>\[LOW\]\s*(.*?)<\/h3>/g,'<div class="sevCard LOW"><span class="sevBadge LOW">LOW</span><strong>$1</strong></div>');
   html=html.replace(/<h3>\[CRITICAL\]\s*(.*?)<\/h3>/g,'<div class="sevCard HIGH"><span class="sevBadge HIGH">CRITICAL</span><strong>$1</strong></div>');
+  if(mode==='negotiate'){
+    html=html.replace(/<strong>Current language:<\/strong>\s*/g,'<div class="negLabel">Current language</div><div class="negCurrent">');
+    html=html.replace(/<strong>Suggested redline:<\/strong>\s*/g,'</div><div class="negLabel">Suggested redline</div><div class="negRedline">');
+    html=html.replace(/<strong>Why it must change:<\/strong>/g,'</div><strong>Why it must change:</strong>');
+    html=html.replace(/<strong>Negotiation note:<\/strong>/g,'<strong>Negotiation note:</strong>');
+  }
   return html;
 }
 
@@ -465,7 +503,7 @@ function renderResult(panelId,title,text,elapsed,tokens){
     riskBar='<div class="riskScore"><div><div class="riskLabel '+cls+'">● OVERALL: '+s.level+' RISK</div><div class="riskCount">'+s.h+' HIGH · '+s.m+' MEDIUM · '+s.l+' LOW</div></div><div class="riskMeter" style="flex:1"><div class="riskFill '+cls+'" style="width:0%" id="riskBar"></div></div></div>';
     setTimeout(function(){var b=document.getElementById('riskBar');if(b)b.style.width=pct+'%';},100);
   }
-  panel.innerHTML='<div class="resultHdr"><div><div class="resultTitle">'+title+'</div><div class="resultFile">'+escHtml(fileName)+'</div></div><div><div class="resultMeta">'+elapsed+'s · '+tokens.toLocaleString()+' tokens</div><div class="resultActions"><button class="actBtn gold" onclick="exportSingle()">⬇ PDF</button><button class="actBtn" id="translateBtn" onclick="translateResult()">🌐 Translate</button><button class="actBtn" onclick="copyText()">Copy</button></div></div></div>'+riskBar+'<div class="mdBody">'+renderMd(text)+'</div>';
+  panel.innerHTML='<div class="resultHdr"><div><div class="resultTitle">'+title+'</div><div class="resultFile">'+escHtml(fileName)+'</div></div><div><div class="resultMeta">'+elapsed+'s · '+tokens.toLocaleString()+' tokens</div><div class="resultActions"><button class="actBtn gold" onclick="exportSingle()">⬇ PDF</button>'+(mode==='negotiate'?'<button class="actBtn gold" onclick="exportNegotiationMemo()">⬇ Memo</button>':'')+'<button class="actBtn" id="translateBtn" onclick="translateResult()">🌐 Translate</button><button class="actBtn" onclick="copyText()">Copy</button></div></div></div>'+riskBar+'<div class="mdBody">'+renderMd(text)+'</div>';
 }
 
 function showLoading(panelId,label){
@@ -477,6 +515,23 @@ function showError(title,msg){
 }
 
 function setStatus(s){document.getElementById('statusPill').textContent='● '+s;}
+
+function exportNegotiationMemo(){
+  if(!lastAnalysisText)return;
+  var opt={margin:[20,20],filename:'Lexis-NegotiationMemo-'+fileName.replace(/\.[^.]+$/,'')+'.pdf',html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}};
+  var w=document.createElement('div');
+  w.style.cssText='font-family:Georgia,serif;font-size:12px;line-height:1.8;color:#1a1a2e;padding:10px;background:#fff';
+  var date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  w.innerHTML='<div style="border-bottom:3px solid #c9a84c;padding-bottom:12px;margin-bottom:20px">'
+    +'<h1 style="font-size:22px;margin:0 0 4px">Negotiation Memo</h1>'
+    +'<p style="font-size:11px;color:#888;margin:0">Prepared by Lexis Intelligence · '+date+'</p>'
+    +'<p style="font-size:11px;color:#888;margin:0">Document: '+escHtml(fileName)+'</p></div>'
+    +'<p style="font-size:11px;color:#888;border:1px solid #ddd;padding:8px;margin-bottom:20px">'
+    +'⚠ This memo is for informational purposes only and does not constitute legal advice. '
+    +'Consult a qualified lawyer before sending to counterparty.</p>'
+    +document.querySelector('#panel-analysis .mdBody').innerHTML;
+  html2pdf().set(opt).from(w).save();
+}
 
 function exportSingle(){
   var p=document.getElementById('panel-analysis');if(!p)return;
