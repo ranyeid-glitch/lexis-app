@@ -859,19 +859,26 @@ async function runComparison(){
       }]
     };
 
-    var [resA, resB] = await Promise.all([
-      fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(bodyA)}).then(r=>r.json()),
-      fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(bodyB)}).then(r=>r.json())
-    ]);
+    // Sequential calls to avoid rate limit
+    result.innerHTML='<div class="loadState" style="min-height:200px"><div class="loadMode">Analyzing Contract A…</div><div class="loadBar"><div class="loadFill"></div></div><div class="loadSub">Step 1 of 3</div></div>';
+    var resA=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(bodyA)}).then(r=>r.json());
+
+    result.innerHTML='<div class="loadState" style="min-height:200px"><div class="loadMode">Analyzing Contract B…</div><div class="loadBar"><div class="loadFill"></div></div><div class="loadSub">Step 2 of 3</div></div>';
+    var resB=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(bodyB)}).then(r=>r.json());
 
     var textA=(resA.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
     var textB=(resB.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
 
     if(!textA||!textB)throw new Error('Failed to analyze one or both contracts.');
 
-    // Step 2: Compare the two analyses
-    var comparePrompt='You have analyzed two legal contracts. Compare them and produce ONLY this structure:\n\n## Verdict\n[One sentence: which contract is stronger and by how much]\n\n## Scores\nContract A: [score]/100 — [HIGH/MEDIUM/LOW RISK]\nContract B: [score]/100 — [HIGH/MEDIUM/LOW RISK]\n\n## Key Differences\n| Clause | Contract A | Contract B | Better |\n|--------|-----------|-----------|--------|\n| [clause] | [what A says] | [what B says] | A or B or Same |\n\n## What A Does Better\n- [specific advantage]\n\n## What B Does Better\n- [specific advantage]\n\n## Recommendation\n[Which contract to choose and the single most important reason]\n\nContract A analysis:\n'+textA+'\n\nContract B analysis:\n'+textB;
+    // Trim to avoid overloading Call 3
+    var trimA=textA.length>3000?textA.substring(0,3000)+'\n[truncated]':textA;
+    var trimB=textB.length>3000?textB.substring(0,3000)+'\n[truncated]':textB;
 
+    // Step 2: Compare the two analyses
+    var comparePrompt='You have analyzed two legal contracts. Compare them and produce ONLY this structure:\n\n## Verdict\n[One sentence: which contract is stronger and by how much]\n\n## Scores\nContract A: [score]/100 — [HIGH/MEDIUM/LOW RISK]\nContract B: [score]/100 — [HIGH/MEDIUM/LOW RISK]\n\n## Key Differences\n| Clause | Contract A | Contract B | Better |\n|--------|-----------|-----------|--------|\n| [clause] | [what A says] | [what B says] | A or B or Same |\n\n## What A Does Better\n- [specific advantage]\n\n## What B Does Better\n- [specific advantage]\n\n## Recommendation\n[Which contract to choose and the single most important reason]\n\nContract A analysis:\n'+trimA+'\n\nContract B analysis:\n'+trimB;
+
+    result.innerHTML='<div class="loadState" style="min-height:200px"><div class="loadMode">Comparing contracts…</div><div class="loadBar"><div class="loadFill"></div></div><div class="loadSub">Step 3 of 3</div></div>';
     var resC=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       _mode:'',
       model:'claude-sonnet-4-20250514',
