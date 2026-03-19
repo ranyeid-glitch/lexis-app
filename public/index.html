@@ -236,7 +236,7 @@ var PROMPTS={
   clauses:'Extract every major clause. For each: clause name, plain language meaning, whether Standard/Favorable/Unfavorable/Unusual, and specific concerns.',
   definitions:'List: top 15 defined terms with definitions, up to 5 undefined important terms, up to 5 ambiguous phrases with two interpretations each, key inconsistencies.',
   compliance:'List: applicable laws/regulations (max 6), missing provisions with severity (max 6), provisions conflicting with law (max 4), jurisdiction assessment, data privacy issues.',
-  obligations:'For each party: top 8 obligations with deadlines and consequences, top 4 rights, top 4 restrictions. Note 3 biggest imbalances and enforcement mechanisms.',
+  obligations:'List obligations for EACH party separately. For Party 1 (client/company): list their obligations with deadlines and consequences, their rights, their restrictions. Then for Party 2 (service provider): list their obligations with deadlines and consequences, their rights, their restrictions. Keep each party section equal in detail. Then note imbalances and enforcement.',
   custom:null
 };
 
@@ -342,7 +342,7 @@ async function analyze(){
     var text,tokens;
     if(TWO_CALL.indexOf(mode)>-1){
       var r1=await callAPI(prompt);
-      var trimmed=r1.text.length>2500?r1.text.substring(0,2500)+'\n[truncated]':r1.text;
+      var trimmed=(mode==='obligations'&&r1.text.length>4000)?r1.text.substring(0,4000)+'\n[truncated]':r1.text.length>2500?r1.text.substring(0,2500)+'\n[truncated]':r1.text;
       var r2=await callFormat(FMT[mode]+'\n\n'+trimmed);
       text=r2.text;tokens=r1.tokens+r2.tokens;
     } else {
@@ -383,7 +383,7 @@ async function runFullAnalysis(){
       var pm=mode;mode=m;
       if(TWO_CALL.indexOf(m)>-1){
         var r1=await callAPI(p);
-        var tr=r1.text.length>2500?r1.text.substring(0,2500)+'\n[truncated]':r1.text;
+        var tr=(m==='obligations'&&r1.text.length>4000)?r1.text.substring(0,4000)+'\n[truncated]':r1.text.length>2500?r1.text.substring(0,2500)+'\n[truncated]':r1.text;
         var r2=await callFormat(FMT[m]+'\n\n'+tr);
         results[m]=r2.text;
       } else {
