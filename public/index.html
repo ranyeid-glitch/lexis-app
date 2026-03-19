@@ -111,6 +111,29 @@ body{background:var(--cream);font-family:sans-serif;color:var(--ink);min-height:
   .negCurrent{background:#fdf0f0;border-left:3px solid var(--red);padding:8px 12px;margin:8px 0;font-family:monospace;font-size:12px;color:var(--red);}
   .negRedline{background:#f0f7f4;border-left:3px solid var(--green);padding:8px 12px;margin:8px 0;font-family:monospace;font-size:12px;color:var(--green);}
   .negLabel{font-family:monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+  .execWrap{border:1px solid var(--border);overflow:hidden;margin-bottom:24px;}
+  .execHeader{background:var(--ink);padding:16px 24px;display:flex;justify-content:space-between;align-items:flex-end;}
+  .execTitle{font-family:Georgia,serif;font-size:18px;color:#fff;margin-bottom:4px;}
+  .execSub{font-family:monospace;font-size:9px;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;}
+  .execMeta{font-family:monospace;font-size:9px;color:#888;text-align:right;line-height:1.8;}
+  .execDocBar{background:var(--parchment);padding:12px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);}
+  .execDocTitle{font-family:Georgia,serif;font-size:14px;color:var(--ink);}
+  .execDocSub{font-size:11px;color:var(--muted);margin-top:2px;}
+  .execScorePill{font-family:monospace;font-size:10px;font-weight:500;padding:5px 12px;color:#fff;}
+  .execBody{padding:20px 24px;}
+  .execSection{margin-bottom:20px;}
+  .execSecLabel{font-family:monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;}
+  .execSecLine{height:1px;background:var(--border);margin-bottom:12px;}
+  .execText{font-size:13px;line-height:1.8;color:var(--ink);}
+  .execRisk{display:flex;gap:10px;margin-bottom:10px;}
+  .execRiskBar{width:3px;flex-shrink:0;border-radius:2px;}
+  .execRiskTitle{font-size:13px;font-weight:500;margin-bottom:2px;}
+  .execRiskDesc{font-size:11px;color:var(--muted);line-height:1.5;}
+  .execExposureBox{background:var(--red-bg);border:1px solid #e8c0c0;padding:12px 16px;margin-bottom:8px;}
+  .execExposureAmt{font-size:15px;font-weight:500;color:var(--red);margin-bottom:4px;}
+  .execVerdictBox{padding:14px 18px;border:1px solid var(--amber);background:var(--amber-bg);margin-top:8px;}
+  .execFooter{background:var(--parchment);padding:10px 24px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);}
+  .execFootNote{font-family:monospace;font-size:9px;color:var(--muted);}
   .scoreWrap{margin-bottom:24px;}
   .scoreBig{font-family:Georgia,serif;font-size:56px;font-weight:600;line-height:1;}
   .scoreBar{height:10px;background:var(--border);border-radius:5px;overflow:hidden;margin:8px 0 4px;}
@@ -187,6 +210,7 @@ input[type="file"]{display:none;}
         <button class="modeBtn" data-mode="custom" onclick="pickMode(this)"><span class="mi">💬</span><span class="ml">Ask Anything</span></button>
         <button class="modeBtn" data-mode="negotiate" onclick="pickMode(this)" style="grid-column:1/-1;border-color:var(--gold);"><span class="mi">✍</span><span class="ml">Negotiate — Redline Suggestions</span></button>
         <button class="modeBtn" data-mode="score" onclick="pickMode(this)" style="grid-column:1/-1;border-color:var(--gold);"><span class="mi">🎯</span><span class="ml">Contract Score — 0 to 100</span></button>
+        <button class="modeBtn" data-mode="exec" onclick="pickMode(this)" style="grid-column:1/-1;border-color:var(--gold);"><span class="mi">📄</span><span class="ml">Executive Summary — Board Ready</span></button>
       </div>
     </div>
     <div class="customBox" id="customBox">
@@ -269,6 +293,13 @@ var PROMPTS={
   compliance:'List: applicable laws/regulations (max 6), missing provisions with severity (max 6), provisions conflicting with law (max 4), jurisdiction assessment, data privacy issues.',
   obligations:'List ONLY the client/company obligations in this legal document: their obligations with deadlines and consequences, their rights, their restrictions. Be thorough and specific.',
   custom:null,
+  exec:`Analyze this legal document for a C-level executive who needs to make a signing decision. Extract:
+1. What this contract does — 2-3 plain sentences, no jargon
+2. Financial exposure — the maximum financial risk if things go wrong (liability cap amount vs estimated asset/inventory value, calculate the gap in AED)
+3. ALL High risks — every single high risk, one sentence each
+4. Top 2 Medium risks only — one sentence each
+5. Before signing — exactly 3 specific negotiation actions and the projected score improvement
+6. Verdict — one sentence: sign as-is, negotiate first, or do not sign`,
   score:`Analyze this legal document and score it across four dimensions. For each dimension provide a score from 0 to 100 (0=extremely poor, 50=average, 100=excellent) and specific findings.
 
 1. COMMERCIAL RISK (payment terms, liability, pricing, financial exposure)
@@ -311,8 +342,8 @@ Walk-away clause: the one clause that is absolutely non-negotiable and why`,
   obligations2:'List ONLY the service provider obligations in this legal document: their obligations with deadlines and consequences, their rights, their restrictions. Be thorough and specific.'
 };
 
-var LABELS={summary:'Plain Language Summary',risks:'Risk & Red Flag Analysis',dates:'Key Dates & Deadlines',clauses:'Clause-Level Analysis',definitions:'Definitions & Cross-References',compliance:'Compliance Review',obligations:'Rights & Obligations Map',custom:'Custom Analysis',negotiate:'Negotiation Suggestions',score:'Contract Score'};
-var ICONS={summary:'📋',risks:'🚨',dates:'📅',clauses:'🔍',definitions:'📖',compliance:'✅',obligations:'⚡',custom:'💬',negotiate:'✍',score:'🎯'};
+var LABELS={summary:'Plain Language Summary',risks:'Risk & Red Flag Analysis',dates:'Key Dates & Deadlines',clauses:'Clause-Level Analysis',definitions:'Definitions & Cross-References',compliance:'Compliance Review',obligations:'Rights & Obligations Map',custom:'Custom Analysis',negotiate:'Negotiation Suggestions',score:'Contract Score',exec:'Executive Summary'};
+var ICONS={summary:'📋',risks:'🚨',dates:'📅',clauses:'🔍',definitions:'📖',compliance:'✅',obligations:'⚡',custom:'💬',negotiate:'✍',score:'🎯',exec:'📄'};
 var LANG_SUFFIX={en:'',ar:'\n\nIMPORTANT: Respond entirely in Arabic.',fr:'\n\nIMPORTANT: Respond entirely in French.'};
 
 function onDragOver(e){e.preventDefault();document.getElementById('dropZone').classList.add('drag');}
@@ -496,6 +527,129 @@ function getRiskScore(text){
 function getScoreColor(n){return n>=70?'var(--green)':n>=50?'#d4820a':'var(--red)';}
 function getScoreLabel(n){return n>=70?'LOW RISK':n>=50?'MEDIUM RISK':'HIGH RISK';}
 
+function buildExecSummary(text){
+  try{
+    var lines=text.split('\n');
+    var sections={};
+    var current='';
+    var buf=[];
+
+    lines.forEach(function(line){
+      var trimmed=line.trim();
+      if(trimmed.match(/^##\s+What This Contract Does/i)){current='what';buf=[];}
+      else if(trimmed.match(/^##\s+Financial Exposure/i)){if(current)sections[current]=buf.join('\n');current='exposure';buf=[];}
+      else if(trimmed.match(/^##\s+Risks/i)){if(current)sections[current]=buf.join('\n');current='risks';buf=[];}
+      else if(trimmed.match(/^##\s+Before Signing/i)){if(current)sections[current]=buf.join('\n');current='before';buf=[];}
+      else if(trimmed.match(/^##\s+Verdict/i)){if(current)sections[current]=buf.join('\n');current='verdict';buf=[];}
+      else if(current){buf.push(line);}
+    });
+    if(current)sections[current]=buf.join('\n');
+
+    if(!sections.what && !sections.verdict)return null;
+
+    // Parse score from text
+    var scoreM=text.match(/(\d+)\s*\/\s*100/);
+    var score=scoreM?parseInt(scoreM[1]):0;
+    var scoreColor=score>=70?'var(--green)':score>=50?'#d4820a':'var(--red)';
+    var scoreLabel=score>=70?'LOW RISK':score>=50?'MEDIUM RISK':'HIGH RISK';
+
+    // Parse financial exposure
+    var expLines=(sections.exposure||'').split('\n').filter(function(l){return l.trim();});
+    var expAmt=expLines[0]||'';
+    var expDesc=expLines.slice(1).join(' ').trim();
+
+    // Parse risks
+    var riskLines=(sections.risks||'').split('\n');
+    var highRisks=[];var medRisks=[];var currentSection='';
+    riskLines.forEach(function(l){
+      var t=l.trim();
+      if(t.match(/^\*\*HIGH/i)||t.match(/^HIGH RISK/i))currentSection='high';
+      else if(t.match(/^\*\*MEDIUM/i)||t.match(/^MEDIUM RISK/i))currentSection='med';
+      else if(t.match(/^[-*]\s+(.+)/)){
+        var m=t.match(/^[-*]\s+(.+)/);
+        if(m){
+          var parts=m[1].split(':');
+          var title=parts[0].trim().replace(/\*\*/g,'');
+          var desc=parts.slice(1).join(':').trim();
+          if(currentSection==='high')highRisks.push({title:title,desc:desc});
+          else if(currentSection==='med'&&medRisks.length<2)medRisks.push({title:title,desc:desc});
+        }
+      }
+    });
+
+    // Build risks HTML
+    var highHtml=highRisks.map(function(r){
+      return '<div class="execRisk"><div class="execRiskBar" style="background:var(--red)"></div><div><div class="execRiskTitle" style="color:var(--red)">'+escHtml(r.title)+'</div><div class="execRiskDesc">'+escHtml(r.desc)+'</div></div></div>';
+    }).join('');
+    var medHtml=medRisks.map(function(r){
+      return '<div class="execRisk"><div class="execRiskBar" style="background:#d4820a"></div><div><div class="execRiskTitle" style="color:#d4820a">'+escHtml(r.title)+'</div><div class="execRiskDesc">'+escHtml(r.desc)+'</div></div></div>';
+    }).join('');
+
+    // Parse before signing
+    var beforeLines=(sections.before||'').split('\n').filter(function(l){return l.trim();});
+    var projectedScore='';
+    var actions=beforeLines.filter(function(l){
+      var pm=l.match(/Projected score[^:]*:\s*(.+)/i);
+      if(pm){projectedScore=pm[1];return false;}
+      return l.match(/^\d+\.|^[-*]/);
+    });
+    var actionsHtml=actions.map(function(a){
+      return '<li style="margin-bottom:6px;font-size:13px;line-height:1.6">'+escHtml(a.replace(/^\d+\.\s*/,'').replace(/^[-*]\s*/,''))+'</li>';
+    }).join('');
+
+    var verdict=(sections.verdict||'').replace(/\n/g,' ').trim();
+    var verdictColor=verdict.toLowerCase().indexOf('do not sign')>-1?'var(--red)':verdict.toLowerCase().indexOf('negotiate')>-1?'#d4820a':'var(--green)';
+
+    var date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+
+    var html='<div class="execWrap">'
+      +'<div class="execHeader">'
+      +'<div><div class="execTitle">Lexis Intelligence</div><div class="execSub">Executive Summary</div></div>'
+      +'<div class="execMeta">'+date+'<br>CONFIDENTIAL</div>'
+      +'</div>'
+      +'<div class="execDocBar">'
+      +'<div><div class="execDocTitle">'+escHtml(fileName)+'</div><div class="execDocSub">Prepared for C-Level review</div></div>'
+      +(score?'<div class="execScorePill" style="background:'+scoreColor+'">'+score+'/100 '+scoreLabel+'</div>':'')
+      +'</div>'
+      +'<div class="execBody">'
+
+      +'<div class="execSection"><div class="execSecLabel">01 — What This Contract Does</div><div class="execSecLine"></div>'
+      +'<div class="execText">'+escHtml((sections.what||'').trim())+'</div></div>'
+
+      +(expAmt?'<div class="execSection"><div class="execSecLabel">02 — Financial Exposure</div><div class="execSecLine"></div>'
+      +'<div class="execExposureBox"><div class="execExposureAmt">'+escHtml(expAmt.replace(/\*\*/g,''))+'</div>'
+      +(expDesc?'<div style="font-size:12px;color:var(--muted)">'+escHtml(expDesc)+'</div>':'')+'</div></div>':'')
+
+      +'<div class="execSection"><div class="execSecLabel">03 — Risks Requiring Board Attention</div><div class="execSecLine"></div>'
+      +(highRisks.length?'<div style="font-family:monospace;font-size:9px;letter-spacing:.1em;color:var(--red);margin-bottom:8px;text-transform:uppercase">High Risks</div>'+highHtml:'')
+      +(medRisks.length?'<div style="font-family:monospace;font-size:9px;letter-spacing:.1em;color:#d4820a;margin:12px 0 8px;text-transform:uppercase">Medium Risks (Top 2)</div>'+medHtml:'')
+      +'</div>'
+
+      +(actionsHtml?'<div class="execSection"><div class="execSecLabel">04 — Before Signing</div><div class="execSecLine"></div>'
+      +'<ol style="padding-left:18px;margin:0">'+actionsHtml+'</ol>'
+      +(projectedScore?'<div style="margin-top:8px;font-size:12px;color:var(--muted)">Projected score after negotiation: <strong>'+escHtml(projectedScore)+'</strong></div>':'')
+      +'</div>':'')
+
+      +(verdict?'<div class="execVerdictBox"><div style="font-family:monospace;font-size:9px;letter-spacing:.1em;color:var(--amber);text-transform:uppercase;margin-bottom:6px">Verdict</div>'
+      +'<div style="font-size:13px;font-weight:500;color:'+verdictColor+'">'+escHtml(verdict)+'</div></div>':'')
+
+      +'</div>'
+      +'<div class="execFooter">'
+      +'<div class="execFootNote">Prepared by Lexis Intelligence · For informational purposes only · Not a substitute for legal advice</div>'
+      +'<button class="actBtn gold" onclick="exportExecPDF()">⬇ Export PDF</button>'
+      +'</div>'
+      +'</div>'
+
+      // Also show full text below for reference
+      +'<div class="mdBody" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">'+renderMd(text)+'</div>';
+
+    return html;
+  }catch(e){
+    console.error('buildExecSummary error:',e);
+    return null;
+  }
+}
+
 function buildScorecard(text){
   try {
     // Step 1: Extract overall score — format: "Overall: 63/100"
@@ -609,6 +763,13 @@ function renderResult(panelId,title,text,elapsed,tokens){
   }
   var scoreCard='';
   if(mode==='score'){var sc=buildScorecard(text);if(sc)scoreCard=sc;}
+  if(mode==='exec'){
+    var execHtml=buildExecSummary(text);
+    if(execHtml){
+      panel.innerHTML=execHtml;
+      return;
+    }
+  }
   panel.innerHTML='<div class="resultHdr"><div><div class="resultTitle">'+title+'</div><div class="resultFile">'+escHtml(fileName)+'</div></div><div><div class="resultMeta">'+elapsed+'s · '+tokens.toLocaleString()+' tokens</div><div class="resultActions"><button class="actBtn gold" onclick="exportSingle()">⬇ PDF</button>'+(mode==='negotiate'?'<button class="actBtn gold" onclick="exportNegotiationMemo()">⬇ Memo</button>':'')+'<button class="actBtn" id="translateBtn" onclick="translateResult()">🌐 Translate</button><button class="actBtn" onclick="copyText()">Copy</button></div></div></div>'+riskBar+scoreCard+'<div class="mdBody">'+renderMd(text)+'</div>';
 }
 
@@ -904,6 +1065,18 @@ async function runComparison(){
   } finally{
     btn.disabled=false;btn.textContent='⚖ Compare Contracts →';
   }
+}
+
+function exportExecPDF(){
+  var panel=document.getElementById('panel-analysis');
+  if(!panel)return;
+  var execWrap=panel.querySelector('.execWrap');
+  if(!execWrap){exportSingle();return;}
+  var opt={margin:[10,10],filename:'Lexis-ExecutiveSummary-'+fileName.replace(/\.[^.]+$/,'')+'.pdf',html2canvas:{scale:1.5,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}};
+  var w=document.createElement('div');
+  w.style.cssText='font-family:Georgia,serif;font-size:12px;line-height:1.7;color:#1a1a2e;background:#fff';
+  w.innerHTML=execWrap.outerHTML;
+  html2pdf().set(opt).from(w).save();
 }
 
 function exportComparisonPDF(){
