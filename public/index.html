@@ -297,7 +297,7 @@ async function callAPI(prompt,includeDoc){
     _fileType:fileExt,
     _fileData:(includeDoc&&fileB64&&isOffice)?fileB64:undefined,
     model:'claude-sonnet-4-20250514',
-    max_tokens:4000,
+    max_tokens:8096,
     system:'You are Lexis, an expert legal document analyst. Follow the exact format and structure requested.',
     messages:(chatHistory.length>0&&!includeDoc)?chatHistory:[{role:'user',content:content}]
   };
@@ -306,6 +306,23 @@ async function callAPI(prompt,includeDoc){
   if(!res.ok)throw new Error(data&&data.error?data.error.message:'Error '+res.status);
   var text=(data.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('\n');
   if(!text)throw new Error('Empty response. Please try again.');
+  var tokens=((data.usage||{}).input_tokens||0)+((data.usage||{}).output_tokens||0);
+  return{text:text,tokens:tokens};
+}
+
+// Dedicated formatter call - clean, no document, no history
+async function callFormat(prompt){
+  var body={
+    model:'claude-sonnet-4-20250514',
+    max_tokens:8096,
+    system:'You are a document formatter. Reformat the provided content into the exact template shown. Do not add any content not present in the source. Do not add explanations or commentary.',
+    messages:[{role:'user',content:[{type:'text',text:prompt}]}]
+  };
+  var res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  var data=await res.json();
+  if(!res.ok)throw new Error(data&&data.error?data.error.message:'Error '+res.status);
+  var text=(data.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('\n');
+  if(!text)throw new Error('Empty response on format call. Please try again.');
   var tokens=((data.usage||{}).input_tokens||0)+((data.usage||{}).output_tokens||0);
   return{text:text,tokens:tokens};
 }
@@ -325,8 +342,8 @@ async function analyze(){
     var text,tokens;
     if(TWO_CALL.indexOf(mode)>-1){
       var r1=await callAPI(prompt);
-      var trimmed=r1.text.length>3500?r1.text.substring(0,3500)+'\n[truncated]':r1.text;
-      var r2=await callAPI(FMT[mode]+'\n\n'+trimmed,false);
+      var trimmed=r1.text.length>2500?r1.text.substring(0,2500)+'\n[truncated]':r1.text;
+      var r2=await callFormat(FMT[mode]+'\n\n'+trimmed);
       text=r2.text;tokens=r1.tokens+r2.tokens;
     } else {
       var r=await callAPI(prompt);text=r.text;tokens=r.tokens;
@@ -366,8 +383,8 @@ async function runFullAnalysis(){
       var pm=mode;mode=m;
       if(TWO_CALL.indexOf(m)>-1){
         var r1=await callAPI(p);
-        var tr=r1.text.length>3500?r1.text.substring(0,3500)+'\n[truncated]':r1.text;
-        var r2=await callAPI(FMT[m]+'\n\n'+tr,false);
+        var tr=r1.text.length>2500?r1.text.substring(0,2500)+'\n[truncated]':r1.text;
+        var r2=await callFormat(FMT[m]+'\n\n'+tr);
         results[m]=r2.text;
       } else {
         var r=await callAPI(p);results[m]=r.text;
