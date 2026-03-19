@@ -10,69 +10,69 @@
 <style>
 :root{--ink:#1a1a2e;--ink2:#2d2d4a;--gold:#c9a84c;--gold-light:#f0dfa0;--cream:#faf8f3;--parchment:#f2ede0;--border:#ddd8c8;--muted:#8a8070;--red:#b04040;--red-bg:#fdf0f0;--green:#2d6a4f;--green-bg:#f0f7f4;--amber:#92600a;--amber-bg:#fdf6e3;--blue:#1e4a7a;}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--cream);font-family:'IBM Plex Sans',sans-serif;color:var(--ink);min-height:100vh;}
+body{background:var(--cream);font-family:sans-serif;color:var(--ink);min-height:100vh;}
 .header{background:var(--ink);padding:0 28px;height:62px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--gold);position:sticky;top:0;z-index:200;}
 .hLeft{display:flex;align-items:center;gap:12px;}
 .logoMark{width:36px;height:36px;border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px;}
-.logoText{font-family:'Playfair Display',serif;font-size:18px;color:#fff;}
-.logoSub{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-top:2px;}
+.logoText{font-family:Georgia,serif;font-size:18px;color:#fff;}
+.logoSub{font-family:monospace;font-size:9px;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-top:2px;}
 .hRight{display:flex;align-items:center;gap:12px;}
 .langToggle{display:flex;background:rgba(255,255,255,.08);border:1px solid rgba(201,168,76,.3);overflow:hidden;}
-.langBtn{padding:5px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(255,255,255,.5);cursor:pointer;background:none;border:none;transition:all .15s;}
+.langBtn{padding:5px 12px;font-family:monospace;font-size:11px;color:rgba(255,255,255,.5);cursor:pointer;background:none;border:none;transition:all .15s;}
 .langBtn.on{background:var(--gold);color:var(--ink);font-weight:500;}
-.statusPill{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:4px 12px;border:1px solid rgba(201,168,76,.4);color:var(--gold);letter-spacing:.06em;}
+.statusPill{font-family:monospace;font-size:10px;padding:4px 12px;border:1px solid rgba(201,168,76,.4);color:var(--gold);letter-spacing:.06em;}
 .layout{display:grid;grid-template-columns:290px 1fr;min-height:calc(100vh - 62px);}
 .sidebar{background:var(--parchment);border-right:1px solid var(--border);padding:20px 16px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;}
-.sLabel{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.sLabel{font-family:monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
 .dropZone{border:1.5px dashed var(--border);background:var(--cream);padding:20px 12px;text-align:center;cursor:pointer;transition:all .2s;user-select:none;}
 .dropZone:hover,.dropZone.drag{border-color:var(--gold);background:#fdf9f0;}
 .dropZone.loaded{border-style:solid;border-color:var(--green);background:var(--green-bg);}
 .dIcon{font-size:26px;margin-bottom:6px;}
 .dMain{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:2px;}
 .dSub{font-size:11px;color:var(--muted);}
-.dName{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--green);margin-top:6px;word-break:break-all;display:none;}
+.dName{font-family:monospace;font-size:10px;color:var(--green);margin-top:6px;word-break:break-all;display:none;}
 .dropZone.loaded .dName{display:block;}
 .modeGrid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
-.modeBtn{padding:9px 7px;border:1px solid var(--border);background:var(--cream);cursor:pointer;text-align:left;transition:all .15s;font-family:'IBM Plex Sans',sans-serif;width:100%;}
+.modeBtn{padding:9px 7px;border:1px solid var(--border);background:var(--cream);cursor:pointer;text-align:left;transition:all .15s;font-family:sans-serif;width:100%;}
 .modeBtn:hover{border-color:var(--gold);background:#fdf9f0;}
 .modeBtn.on{border-color:var(--ink);background:var(--ink);color:#fff;}
 .modeBtn.on .mi{color:var(--gold);}
 .mi{font-size:14px;display:block;margin-bottom:3px;}
 .ml{font-size:11px;font-weight:500;line-height:1.3;display:block;}
-.fullBtn{width:100%;padding:11px;background:var(--ink2);color:var(--gold-light);border:1px solid var(--gold);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.fullBtn{width:100%;padding:11px;background:var(--ink2);color:var(--gold-light);border:1px solid var(--gold);font-family:monospace;font-size:11px;letter-spacing:.08em;cursor:pointer;transition:all .2s;text-transform:uppercase;}
 .fullBtn:hover:not(:disabled){background:var(--gold);color:var(--ink);}
 .fullBtn:disabled{opacity:.4;cursor:not-allowed;}
 .customBox{display:none;}
 .customBox.on{display:block;}
-.customTa{width:100%;border:1px solid var(--border);background:var(--cream);padding:9px 11px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;color:var(--ink);resize:vertical;min-height:70px;outline:none;}
+.customTa{width:100%;border:1px solid var(--border);background:var(--cream);padding:9px 11px;font-family:sans-serif;font-size:13px;color:var(--ink);resize:vertical;min-height:70px;outline:none;}
 .customTa:focus{border-color:var(--gold);}
-.runBtn{width:100%;padding:14px;background:var(--gold);color:var(--ink);border:none;font-family:'Playfair Display',serif;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;}
+.runBtn{width:100%;padding:14px;background:var(--gold);color:var(--ink);border:none;font-family:Georgia,serif;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;}
 .runBtn:hover:not(:disabled){background:#b8943e;}
 .runBtn:disabled{opacity:.4;cursor:not-allowed;}
-.disclaimer{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);padding-top:12px;}
+.disclaimer{font-family:monospace;font-size:9px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);padding-top:12px;}
 .main{display:flex;flex-direction:column;overflow:hidden;}
 .tabBar{display:flex;border-bottom:1px solid var(--border);background:var(--parchment);padding:0 28px;}
-.tab{padding:12px 18px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;text-transform:uppercase;}
+.tab{padding:12px 18px;font-family:monospace;font-size:11px;letter-spacing:.08em;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;text-transform:uppercase;}
 .tab.on{color:var(--ink);border-bottom-color:var(--gold);}
 .panels{flex:1;overflow-y:auto;}
 .panel{display:none;padding:28px 32px;}
 .panel.on{display:block;}
 .emptyState{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:380px;text-align:center;opacity:.35;}
-.emptyGlyph{font-family:'Playfair Display',serif;font-size:72px;color:var(--border);line-height:1;margin-bottom:14px;}
+.emptyGlyph{font-family:Georgia,serif;font-size:72px;color:var(--border);line-height:1;margin-bottom:14px;}
 .emptyLabel{font-size:14px;color:var(--muted);line-height:1.8;}
 .loadState{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:380px;gap:16px;}
-.loadMode{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;}
+.loadMode{font-family:monospace;font-size:11px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;}
 .loadBar{width:200px;height:2px;background:var(--border);overflow:hidden;}
 .loadFill{height:100%;background:var(--gold);animation:sweep 1.5s ease-in-out infinite;}
 @keyframes sweep{0%{width:0;margin-left:0}50%{width:100%;margin-left:0}100%{width:0;margin-left:100%}}
-.loadSub{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);}
-.loadProgress{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--gold);letter-spacing:.06em;}
+.loadSub{font-family:monospace;font-size:11px;color:var(--muted);}
+.loadProgress{font-family:monospace;font-size:10px;color:var(--gold);letter-spacing:.06em;}
 .resultHdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);}
-.resultTitle{font-family:'Playfair Display',serif;font-size:24px;color:var(--ink);}
-.resultFile{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-top:3px;}
-.resultMeta{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);text-align:right;line-height:1.8;}
+.resultTitle{font-family:Georgia,serif;font-size:24px;color:var(--ink);}
+.resultFile{font-family:monospace;font-size:10px;color:var(--muted);margin-top:3px;}
+.resultMeta{font-family:monospace;font-size:10px;color:var(--muted);text-align:right;line-height:1.8;}
 .resultActions{display:flex;gap:8px;margin-top:8px;justify-content:flex-end;}
-.actBtn{padding:5px 12px;border:1px solid var(--border);background:transparent;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);cursor:pointer;transition:all .15s;letter-spacing:.06em;text-transform:uppercase;}
+.actBtn{padding:5px 12px;border:1px solid var(--border);background:transparent;font-family:monospace;font-size:10px;color:var(--muted);cursor:pointer;transition:all .15s;letter-spacing:.06em;text-transform:uppercase;}
 .actBtn:hover{border-color:var(--ink);color:var(--ink);}
 .actBtn.gold{border-color:var(--gold);color:var(--amber);}
 .actBtn.gold:hover{background:var(--gold);color:var(--ink);}
@@ -82,14 +82,14 @@ body{background:var(--cream);font-family:'IBM Plex Sans',sans-serif;color:var(--
 .riskFill.high{background:var(--red);}
 .riskFill.medium{background:#d4820a;}
 .riskFill.low{background:var(--green);}
-.riskLabel{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;white-space:nowrap;}
+.riskLabel{font-family:monospace;font-size:11px;font-weight:500;white-space:nowrap;}
 .riskLabel.high{color:var(--red);}
 .riskLabel.medium{color:var(--amber);}
 .riskLabel.low{color:var(--green);}
-.riskCount{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);}
+.riskCount{font-family:monospace;font-size:10px;color:var(--muted);}
 .mdBody{font-size:14px;line-height:1.85;color:var(--ink);}
-.mdBody h1{font-family:'Playfair Display',serif;font-size:20px;margin:24px 0 10px;border-bottom:1px solid var(--border);padding-bottom:6px;}
-.mdBody h2{font-family:'Playfair Display',serif;font-size:17px;margin:20px 0 8px;}
+.mdBody h1{font-family:Georgia,serif;font-size:20px;margin:24px 0 10px;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.mdBody h2{font-family:Georgia,serif;font-size:17px;margin:20px 0 8px;}
 .mdBody h3{font-size:14px;font-weight:500;margin:16px 0 6px;}
 .mdBody p{margin-bottom:10px;}
 .mdBody ul,.mdBody ol{padding-left:20px;margin-bottom:10px;}
@@ -104,13 +104,25 @@ body{background:var(--cream);font-family:'IBM Plex Sans',sans-serif;color:var(--
 .sevCard.HIGH{border-color:var(--red);background:var(--red-bg);}
 .sevCard.MEDIUM{border-color:#d4820a;background:var(--amber-bg);}
 .sevCard.LOW{border-color:var(--green);background:var(--green-bg);}
-.sevBadge{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.1em;padding:2px 8px;margin-bottom:6px;display:inline-block;}
+.sevBadge{font-family:monospace;font-size:10px;font-weight:500;letter-spacing:.1em;padding:2px 8px;margin-bottom:6px;display:inline-block;}
 .sevBadge.HIGH{background:var(--red);color:#fff;}
 .sevBadge.MEDIUM{background:#d4820a;color:#fff;}
 .sevBadge.LOW{background:var(--green);color:#fff;}
-  .negCurrent{background:#fdf0f0;border-left:3px solid var(--red);padding:8px 12px;margin:8px 0;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--red);}
-  .negRedline{background:#f0f7f4;border-left:3px solid var(--green);padding:8px 12px;margin:8px 0;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--green);}
-  .negLabel{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+  .negCurrent{background:#fdf0f0;border-left:3px solid var(--red);padding:8px 12px;margin:8px 0;font-family:monospace;font-size:12px;color:var(--red);}
+  .negRedline{background:#f0f7f4;border-left:3px solid var(--green);padding:8px 12px;margin:8px 0;font-family:monospace;font-size:12px;color:var(--green);}
+  .negLabel{font-family:monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+  .scoreWrap{margin-bottom:24px;}
+  .scoreBig{font-family:Georgia,serif;font-size:56px;font-weight:600;line-height:1;}
+  .scoreBar{height:10px;background:var(--border);border-radius:5px;overflow:hidden;margin:8px 0 4px;}
+  .scoreFill{height:100%;border-radius:5px;transition:width 1s ease;}
+  .scoreDims{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:20px 0;}
+  .scoreDim{border:1px solid var(--border);padding:14px 12px;text-align:center;}
+  .scoreDimLabel{font-family:monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+  .scoreDimNum{font-family:Georgia,serif;font-size:32px;font-weight:600;line-height:1;margin-bottom:8px;}
+  .scoreDimBar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:8px;}
+  .scoreDimFill{height:100%;border-radius:3px;}
+  .scoreDimNote{font-size:11px;color:var(--muted);line-height:1.4;}
+  .scoreRec{padding:14px 18px;border:1px solid var(--amber);background:var(--amber-bg);margin-top:20px;}
 .chatWrap{display:flex;flex-direction:column;height:calc(100vh - 62px - 45px);}
 .chatMessages{flex:1;overflow-y:auto;padding:20px 28px;display:flex;flex-direction:column;gap:14px;}
 .chatMsg{max-width:85%;}
@@ -119,14 +131,14 @@ body{background:var(--cream);font-family:'IBM Plex Sans',sans-serif;color:var(--
 .chatBubble{padding:12px 16px;font-size:14px;line-height:1.7;}
 .chatMsg.user .chatBubble{background:var(--ink);color:#fff;}
 .chatMsg.ai .chatBubble{background:var(--cream);border:1px solid var(--border);}
-.chatSender{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px;letter-spacing:.08em;text-transform:uppercase;}
+.chatSender{font-family:monospace;font-size:9px;color:var(--muted);margin-bottom:4px;letter-spacing:.08em;text-transform:uppercase;}
 .chatInput{display:flex;gap:10px;border-top:1px solid var(--border);background:var(--parchment);padding:12px 20px;}
-.chatInput input{flex:1;border:1px solid var(--border);background:var(--cream);padding:10px 14px;font-family:'IBM Plex Sans',sans-serif;font-size:14px;color:var(--ink);outline:none;}
+.chatInput input{flex:1;border:1px solid var(--border);background:var(--cream);padding:10px 14px;font-family:sans-serif;font-size:14px;color:var(--ink);outline:none;}
 .chatInput input:focus{border-color:var(--gold);}
-.chatSendBtn{padding:10px 20px;background:var(--ink);color:#fff;border:none;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;letter-spacing:.06em;}
+.chatSendBtn{padding:10px 20px;background:var(--ink);color:#fff;border:none;font-family:monospace;font-size:12px;cursor:pointer;letter-spacing:.06em;}
 .chatSendBtn:disabled{opacity:.4;cursor:not-allowed;}
 .fullSection{margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--border);}
-.fullSectionTitle{font-family:'Playfair Display',serif;font-size:20px;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.fullSectionTitle{font-family:Georgia,serif;font-size:20px;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
 .errBox{background:var(--red-bg);border:1px solid #e8c0c0;padding:18px 22px;color:var(--red);font-size:14px;line-height:1.7;}
 .errBox strong{display:block;font-size:15px;margin-bottom:6px;}
 input[type="file"]{display:none;}
@@ -173,6 +185,7 @@ input[type="file"]{display:none;}
         <button class="modeBtn" data-mode="obligations" onclick="pickMode(this)"><span class="mi">⚡</span><span class="ml">Rights & Obligations</span></button>
         <button class="modeBtn" data-mode="custom" onclick="pickMode(this)"><span class="mi">💬</span><span class="ml">Ask Anything</span></button>
         <button class="modeBtn" data-mode="negotiate" onclick="pickMode(this)" style="grid-column:1/-1;border-color:var(--gold);"><span class="mi">✍</span><span class="ml">Negotiate — Redline Suggestions</span></button>
+        <button class="modeBtn" data-mode="score" onclick="pickMode(this)" style="grid-column:1/-1;border-color:var(--gold);"><span class="mi">🎯</span><span class="ml">Contract Score — 0 to 100</span></button>
       </div>
     </div>
     <div class="customBox" id="customBox">
@@ -230,6 +243,7 @@ var FMT={
 
   compliance:'The following compliance review was extracted. Reformat into ONLY these sections, nothing else:\n\n## Applicable Laws\n| Law or Regulation | Jurisdiction | How It Applies |\n|------------------|-------------|----------------|\n| law name | country | explanation |\n\n## Compliance Gaps\n| Missing Provision | Severity | Recommendation |\n|------------------|---------|----------------|\n| what is missing | High/Medium/Low | what to add |\n\n## Regulatory Red Flags\n- provision conflicting with law\n\n## Jurisdiction\n[Is governing law appropriate?]\n\n## Data Privacy\n- data protection issues\n\nHere is the review to reformat:',
 
+  score:'The following contract scoring analysis was done. Reformat into ONLY this exact structure:\n\n## Contract Score\n\nOverall: [number]/100 — [HIGH RISK / MEDIUM RISK / LOW RISK]\n\n## Dimension Scores\n\n| Dimension | Score | Key Finding |\n|-----------|-------|------------|\n| Commercial | [0-100] | [one finding] |\n| Legal | [0-100] | [one finding] |\n| Operational | [0-100] | [one finding] |\n| Compliance | [0-100] | [one finding] |\n\n## What Drives the Score\n\n### Positives\n- [positive finding]\n- [positive finding]\n- [positive finding]\n\n### Negatives\n- [negative finding]\n- [negative finding]\n- [negative finding]\n\n## Recommendation\n[One paragraph: what to fix and projected score after negotiation]\n\nHere is the scoring analysis to reformat:',
   negotiate:'The following negotiation analysis was extracted from a legal document. Reformat into ONLY clause cards and a summary. Nothing else.\n\nFor each clause use exactly this format:\n\n### [HIGH] Clause name — Section reference\n**Current language:** \"exact quote from contract\"\n**Why it must change:** one sentence\n**Suggested redline:** \"complete replacement language\"\n**Negotiation note:** one sentence on how to present this\n\n---\n\n### [MEDIUM] Clause name — Section reference\n**Current language:** \"exact quote\"\n**Why it must change:** explanation\n**Suggested redline:** \"replacement language\"\n**Negotiation note:** how to present\n\n---\n\nEnd with:\n\n## Negotiation Summary\nTotal clauses to negotiate: X\nEstimated sessions needed: X\nOpening position: which clause to lead with and why\nWalk-away clause: the one non-negotiable clause\n\nHere is the negotiation analysis to reformat:',
   obligations:'The following obligations mapping was extracted. Reformat into ONLY these sections, nothing else:\n\n## [Party 1 Name]\n\n### Must Do\n| Obligation | By When | If Breached |\n|-----------|---------|-------------|\n| obligation | deadline | consequence |\n\n### Entitled To\n- right — conditions\n\n### Cannot Do\n- restriction — scope\n\n---\n\n## [Party 2 Name]\n\n### Must Do\n| Obligation | By When | If Breached |\n|-----------|---------|-------------|\n\n### Entitled To\n- right — conditions\n\n### Cannot Do\n- restriction — scope\n\n---\n\n## Imbalances\n- anything one-sided\n\n## Enforcement\n[remedies for breach]\n\nHere is the mapping to reformat:'
 };
@@ -243,7 +257,16 @@ var PROMPTS={
   compliance:'List: applicable laws/regulations (max 6), missing provisions with severity (max 6), provisions conflicting with law (max 4), jurisdiction assessment, data privacy issues.',
   obligations:'List ONLY the client/company obligations in this legal document: their obligations with deadlines and consequences, their rights, their restrictions. Be thorough and specific.',
   custom:null,
-  negotiate:`Review this legal document and identify every clause that should be negotiated. For each clause provide the exact current contract language and a specific suggested redline replacement.
+  score:`Analyze this legal document and score it across four dimensions. For each dimension provide a score from 0 to 100 (0=extremely poor, 50=average, 100=excellent) and specific findings.
+
+1. COMMERCIAL RISK (payment terms, liability, pricing, financial exposure)
+2. LEGAL RISK (enforceability, jurisdiction, dispute resolution, governing law)
+3. OPERATIONAL RISK (KPIs, obligations, termination, force majeure)
+4. COMPLIANCE RISK (regulatory requirements, data protection, tax, permits)
+
+For each: give a score, the top positive finding, and the top negative finding. Then give an overall score (average of 4), top 3 key findings across all dimensions, and a one-sentence recommendation including projected score after negotiation.`,
+
+    negotiate:`Review this legal document and identify every clause that should be negotiated. For each clause provide the exact current contract language and a specific suggested redline replacement.
 
 Use EXACTLY this format for every clause:
 
@@ -273,10 +296,10 @@ Walk-away clause: [the one clause that is non-negotiable]`,
   obligations2:'List ONLY the service provider obligations in this legal document: their obligations with deadlines and consequences, their rights, their restrictions. Be thorough and specific.'
 };
 
-var LABELS={summary:'Plain Language Summary',risks:'Risk & Red Flag Analysis',dates:'Key Dates & Deadlines',clauses:'Clause-Level Analysis',definitions:'Definitions & Cross-References',compliance:'Compliance Review',obligations:'Rights & Obligations Map',custom:'Custom Analysis',negotiate:'Negotiation Suggestions'};
-var ICONS={summary:'📋',risks:'🚨',dates:'📅',clauses:'🔍',definitions:'📖',compliance:'✅',obligations:'⚡',custom:'💬',negotiate:'✍'};
+var LABELS={summary:'Plain Language Summary',risks:'Risk & Red Flag Analysis',dates:'Key Dates & Deadlines',clauses:'Clause-Level Analysis',definitions:'Definitions & Cross-References',compliance:'Compliance Review',obligations:'Rights & Obligations Map',custom:'Custom Analysis',negotiate:'Negotiation Suggestions',score:'Contract Score'};
+var ICONS={summary:'📋',risks:'🚨',dates:'📅',clauses:'🔍',definitions:'📖',compliance:'✅',obligations:'⚡',custom:'💬',negotiate:'✍',score:'🎯'};
 var LANG_SUFFIX={en:'',ar:'\n\nIMPORTANT: Respond entirely in Arabic.',fr:'\n\nIMPORTANT: Respond entirely in French.'};
-var TWO_CALL=['summary','dates','clauses','definitions','compliance','obligations','negotiate'];
+var TWO_CALL=['summary','dates','clauses','definitions','compliance','obligations','negotiate','score'];
 
 function onDragOver(e){e.preventDefault();document.getElementById('dropZone').classList.add('drag');}
 function onDragLeave(){document.getElementById('dropZone').classList.remove('drag');}
@@ -495,6 +518,49 @@ function getRiskScore(text){
   return{h:h,m:m,l:l,level:level};
 }
 
+function getScoreColor(n){return n>=70?'var(--green)':n>=50?'#d4820a':'var(--red)';}
+function getScoreLabel(n){return n>=70?'LOW RISK':n>=50?'MEDIUM RISK':'HIGH RISK';}
+
+function buildScorecard(text){
+  var om=text.match(/Overall:\s*(\d+)\/100/i);
+  var overall=om?parseInt(om[1]):0;
+  if(!overall)return null;
+  var dims=['Commercial','Legal','Operational','Compliance'];
+  var ds={};var dn={};
+  dims.forEach(function(d){
+    var re=new RegExp('\|\s*'+d+'\s*\|\s*(\d+)\s*\|\s*([^|\n]+)','i');
+    var m=text.match(re);
+    if(m){ds[d]=parseInt(m[1]);dn[d]=m[2].trim();}
+    else{ds[d]=overall;dn[d]='';}
+  });
+  var color=getScoreColor(overall);
+  var label=getScoreLabel(overall);
+  var html='<div style="margin-bottom:24px;padding:20px;border:1px solid var(--border)">'
+    +'<div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px">'
+    +"<div><span style=\"font-family:Georgia,serif;font-size:56px;font-weight:600;color:"+color+"\">"+overall+"</span>"
+    +'<span style="font-family:Georgia,serif;font-size:24px;color:var(--muted)">/100</span>'
+    +'<div style="font-family:monospace;font-size:11px;color:'+color+';letter-spacing:.1em;margin-top:4px">● '+label+'</div></div>'
+    +'<div style="text-align:right;font-size:12px;color:var(--muted);line-height:1.8">4 dimensions scored<br>Commercial · Legal · Operational · Compliance</div>'
+    +'</div>'
+    +'<div style="height:10px;background:var(--border);border-radius:5px;overflow:hidden;margin-bottom:4px">'
+    +'<div id="mainScoreFill" style="height:100%;width:0%;background:'+color+';border-radius:5px;transition:width 1s ease"></div></div>'
+    +'<div style="display:flex;justify-content:space-between;font-family:monospace;font-size:9px;color:var(--muted);margin-bottom:20px"><span>HIGH RISK</span><span>LOW RISK</span></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">';
+  dims.forEach(function(d){
+    var s=ds[d]||0;var c=getScoreColor(s);
+    html+='<div style="border:1px solid var(--border);padding:14px 12px;text-align:center">'
+      +'<div style="font-family:monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">'+d+'</div>'
+      +'<div style="font-family:Georgia,serif;font-size:32px;font-weight:600;color:'+c+';line-height:1;margin-bottom:8px">'+s+'</div>'
+      +'<div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:8px">'
+      +'<div style="height:100%;width:'+s+'%;background:'+c+';border-radius:3px"></div></div>'
+      +'<div style="font-size:11px;color:var(--muted);line-height:1.4">'+escHtml(dn[d])+'</div>'
+      +'</div>';
+  });
+  html+='</div></div>';
+  setTimeout(function(){var f=document.getElementById('mainScoreFill');if(f)f.style.width=overall+'%';},100);
+  return html;
+}
+
 function renderResult(panelId,title,text,elapsed,tokens){
   var panel=document.getElementById(panelId);
   var riskBar='';
@@ -503,7 +569,9 @@ function renderResult(panelId,title,text,elapsed,tokens){
     riskBar='<div class="riskScore"><div><div class="riskLabel '+cls+'">● OVERALL: '+s.level+' RISK</div><div class="riskCount">'+s.h+' HIGH · '+s.m+' MEDIUM · '+s.l+' LOW</div></div><div class="riskMeter" style="flex:1"><div class="riskFill '+cls+'" style="width:0%" id="riskBar"></div></div></div>';
     setTimeout(function(){var b=document.getElementById('riskBar');if(b)b.style.width=pct+'%';},100);
   }
-  panel.innerHTML='<div class="resultHdr"><div><div class="resultTitle">'+title+'</div><div class="resultFile">'+escHtml(fileName)+'</div></div><div><div class="resultMeta">'+elapsed+'s · '+tokens.toLocaleString()+' tokens</div><div class="resultActions"><button class="actBtn gold" onclick="exportSingle()">⬇ PDF</button>'+(mode==='negotiate'?'<button class="actBtn gold" onclick="exportNegotiationMemo()">⬇ Memo</button>':'')+'<button class="actBtn" id="translateBtn" onclick="translateResult()">🌐 Translate</button><button class="actBtn" onclick="copyText()">Copy</button></div></div></div>'+riskBar+'<div class="mdBody">'+renderMd(text)+'</div>';
+  var scoreCard='';
+  if(mode==='score'){var sc=buildScorecard(text);if(sc)scoreCard=sc;}
+  panel.innerHTML='<div class="resultHdr"><div><div class="resultTitle">'+title+'</div><div class="resultFile">'+escHtml(fileName)+'</div></div><div><div class="resultMeta">'+elapsed+'s · '+tokens.toLocaleString()+' tokens</div><div class="resultActions"><button class="actBtn gold" onclick="exportSingle()">⬇ PDF</button>'+(mode==='negotiate'?'<button class="actBtn gold" onclick="exportNegotiationMemo()">⬇ Memo</button>':'')+'<button class="actBtn" id="translateBtn" onclick="translateResult()">🌐 Translate</button><button class="actBtn" onclick="copyText()">Copy</button></div></div></div>'+riskBar+scoreCard+'<div class="mdBody">'+renderMd(text)+'</div>';
 }
 
 function showLoading(panelId,label){
