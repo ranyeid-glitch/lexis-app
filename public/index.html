@@ -588,7 +588,6 @@ function exportNegotiationMemo(){
     }
     else if(inRedlineBlock && line.trim()){
       bodyHtml+='<div style="background:#f0f7f4;border-left:3px solid #2d6a4f;padding:8px 12px;margin:4px 0;font-family:monospace;font-size:11px;color:#2d6a4f;line-height:1.6">'+line+'</div>';
-      inRedlineBlock=false;
     }
     // Regular paragraph lines
     else if(line.trim() && !line.match(/^###/) && !line.match(/^##/)){
