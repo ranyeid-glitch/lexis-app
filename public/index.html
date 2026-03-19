@@ -518,18 +518,103 @@ function setStatus(s){document.getElementById('statusPill').textContent='● '+s
 
 function exportNegotiationMemo(){
   if(!lastAnalysisText)return;
-  var opt={margin:[20,20],filename:'Lexis-NegotiationMemo-'+fileName.replace(/\.[^.]+$/,'')+'.pdf',html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}};
-  var w=document.createElement('div');
-  w.style.cssText='font-family:Georgia,serif;font-size:12px;line-height:1.8;color:#1a1a2e;padding:10px;background:#fff';
   var date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-  w.innerHTML='<div style="border-bottom:3px solid #c9a84c;padding-bottom:12px;margin-bottom:20px">'
-    +'<h1 style="font-size:22px;margin:0 0 4px">Negotiation Memo</h1>'
-    +'<p style="font-size:11px;color:#888;margin:0">Prepared by Lexis Intelligence · '+date+'</p>'
-    +'<p style="font-size:11px;color:#888;margin:0">Document: '+escHtml(fileName)+'</p></div>'
-    +'<p style="font-size:11px;color:#888;border:1px solid #ddd;padding:8px;margin-bottom:20px">'
+
+  // Process text line by line to build clean HTML with inline styles
+  var lines=lastAnalysisText.split('\n');
+  var bodyHtml='';
+  var inCurrentBlock=false;
+  var inRedlineBlock=false;
+
+  for(var i=0;i<lines.length;i++){
+    var line=lines[i];
+
+    // HIGH/MEDIUM headers
+    if(line.match(/^###\s*\[HIGH\]/)){
+      var title=line.replace(/^###\s*\[HIGH\]\s*/,'');
+      bodyHtml+='<div style="margin:24px 0 8px;padding:14px 16px;border-left:4px solid #b04040;background:#fdf0f0">'
+        +'<span style="display:inline-block;background:#b04040;color:#fff;font-size:10px;padding:2px 8px;margin-bottom:8px;font-family:monospace;letter-spacing:.08em">HIGH</span>'
+        +'<strong style="display:block;font-size:14px;color:#1a1a2e">'+title+'</strong></div>';
+      inCurrentBlock=false;inRedlineBlock=false;
+    } else if(line.match(/^###\s*\[MEDIUM\]/)){
+      var title=line.replace(/^###\s*\[MEDIUM\]\s*/,'');
+      bodyHtml+='<div style="margin:24px 0 8px;padding:14px 16px;border-left:4px solid #d4820a;background:#fdf6e3">'
+        +'<span style="display:inline-block;background:#d4820a;color:#fff;font-size:10px;padding:2px 8px;margin-bottom:8px;font-family:monospace;letter-spacing:.08em">MEDIUM</span>'
+        +'<strong style="display:block;font-size:14px;color:#1a1a2e">'+title+'</strong></div>';
+      inCurrentBlock=false;inRedlineBlock=false;
+    }
+    // Current language label
+    else if(line.match(/\*\*Current language:\*\*/)){
+      inCurrentBlock=true;inRedlineBlock=false;
+      bodyHtml+='<p style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.1em;margin:10px 0 4px">Current language</p>';
+      var rest=line.replace(/\*\*Current language:\*\*\s*/,'');
+      if(rest) bodyHtml+='<div style="background:#fdf0f0;border-left:3px solid #b04040;padding:8px 12px;margin:4px 0;font-family:monospace;font-size:11px;color:#b04040;line-height:1.6">'+rest+'</div>';
+    }
+    // Suggested redline label
+    else if(line.match(/\*\*Suggested redline:\*\*/)){
+      inCurrentBlock=false;inRedlineBlock=true;
+      bodyHtml+='<p style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.1em;margin:10px 0 4px">Suggested redline</p>';
+      var rest=line.replace(/\*\*Suggested redline:\*\*\s*/,'');
+      if(rest) bodyHtml+='<div style="background:#f0f7f4;border-left:3px solid #2d6a4f;padding:8px 12px;margin:4px 0;font-family:monospace;font-size:11px;color:#2d6a4f;line-height:1.6">'+rest+'</div>';
+    }
+    // Why it must change
+    else if(line.match(/\*\*Why it must change:\*\*/)){
+      inCurrentBlock=false;inRedlineBlock=false;
+      var rest=line.replace(/\*\*Why it must change:\*\*\s*/,'');
+      bodyHtml+='<p style="margin:8px 0;font-size:13px"><strong>Why it must change:</strong> '+rest+'</p>';
+    }
+    // Negotiation note
+    else if(line.match(/\*\*Negotiation note:\*\*/)){
+      inCurrentBlock=false;inRedlineBlock=false;
+      var rest=line.replace(/\*\*Negotiation note:\*\*\s*/,'');
+      bodyHtml+='<p style="margin:8px 0;font-size:13px;color:#555;font-style:italic"><strong style="font-style:normal">Negotiation note:</strong> '+rest+'</p>';
+    }
+    // Divider
+    else if(line.match(/^---/)){
+      bodyHtml+='<hr style="border:none;border-top:1px solid #ddd;margin:20px 0">';
+      inCurrentBlock=false;inRedlineBlock=false;
+    }
+    // Negotiation Summary header
+    else if(line.match(/^##\s*Negotiation Summary/)){
+      bodyHtml+='<h2 style="font-size:16px;margin:24px 0 12px;padding-top:16px;border-top:2px solid #c9a84c">Negotiation Summary</h2>';
+    }
+    // Other headings
+    else if(line.match(/^##/)){
+      bodyHtml+='<h2 style="font-size:15px;margin:20px 0 8px">'+line.replace(/^##\s*/,'')+'</h2>';
+    }
+    // Continuation of current/redline blocks
+    else if(inCurrentBlock && line.trim()){
+      bodyHtml+='<div style="background:#fdf0f0;border-left:3px solid #b04040;padding:8px 12px;margin:4px 0;font-family:monospace;font-size:11px;color:#b04040;line-height:1.6">'+line+'</div>';
+    }
+    else if(inRedlineBlock && line.trim()){
+      bodyHtml+='<div style="background:#f0f7f4;border-left:3px solid #2d6a4f;padding:8px 12px;margin:4px 0;font-family:monospace;font-size:11px;color:#2d6a4f;line-height:1.6">'+line+'</div>';
+      inRedlineBlock=false;
+    }
+    // Regular paragraph lines
+    else if(line.trim() && !line.match(/^###/) && !line.match(/^##/)){
+      bodyHtml+='<p style="margin:6px 0;font-size:13px;line-height:1.7">'+line+'</p>';
+    }
+  }
+
+  var w=document.createElement('div');
+  w.style.cssText='font-family:Georgia,serif;font-size:12px;line-height:1.8;color:#1a1a2e;padding:20px;background:#fff';
+  w.innerHTML=
+    '<div style="border-bottom:3px solid #c9a84c;padding-bottom:14px;margin-bottom:24px">'
+    +'<h1 style="font-size:22px;margin:0 0 6px;font-family:Georgia,serif;color:#1a1a2e">Negotiation Memo</h1>'
+    +'<p style="font-size:11px;color:#888;margin:2px 0">Prepared by Lexis Intelligence · '+date+'</p>'
+    +'<p style="font-size:11px;color:#888;margin:2px 0">Document: '+escHtml(fileName)+'</p>'
+    +'</div>'
+    +'<p style="font-size:11px;color:#666;border:1px solid #ddd;padding:10px;margin-bottom:24px;line-height:1.6">'
     +'⚠ This memo is for informational purposes only and does not constitute legal advice. '
     +'Consult a qualified lawyer before sending to counterparty.</p>'
-    +document.querySelector('#panel-analysis .mdBody').innerHTML;
+    +bodyHtml;
+
+  var opt={
+    margin:[15,15],
+    filename:'Lexis-NegotiationMemo-'+fileName.replace(/\.[^.]+$/,'')+'.pdf',
+    html2canvas:{scale:1.5,useCORS:true,logging:false},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+  };
   html2pdf().set(opt).from(w).save();
 }
 
