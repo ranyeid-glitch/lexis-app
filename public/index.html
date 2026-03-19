@@ -232,21 +232,6 @@ input[type="file"]{display:none;}
 var fileB64=null,fileExt='',fileMime='text/plain',fileName='',mode='summary',currentLang='en';
 var lastAnalysisText='',chatHistory=[];
 
-var FMT={
-  summary:'The following is raw analysis of a legal document. Reformat into ONLY these exact sections, nothing else:\n\n## Document Type\n[one sentence]\n\n## Parties\n| Party | Role | Jurisdiction |\n|-------|------|-------------|\n| name | role | country |\n\n## Core Purpose\n[2-3 sentences]\n\n## Key Commercial Terms\n| Term | Detail |\n|------|--------|\n| Duration | |\n| Payment terms | |\n| Key rates | |\n| Insurance | |\n| Governing law | |\n\n## Obligations\n**[Party 1 name]:**\n- obligation\n\n**[Party 2 name]:**\n- obligation\n\n## Verdict\n[One paragraph: Standard / Favorable to X / Requires negotiation — and why]\n\nHere is the raw analysis:',
-
-  dates:'The following deadlines were extracted from a legal document. Reformat into ONLY a table, missing dates, and top 3 critical. Nothing else.\n\n## Dates & Deadlines\n\n| Date or Timeframe | Action Required | Responsible Party | If Missed | Priority |\n|------------------|----------------|------------------|-----------|----------|\n| 30 days from invoice | Pay fees | Company | Suspension | Critical |\n\nPriority = Critical, Important, or Advisory.\n\n## Missing Dates\n- dates that should exist but are not specified\n\n## Top 3 Critical Deadlines\n1. deadline — why critical\n2. deadline — why critical\n3. deadline — why critical\n\nHere are the deadlines to reformat:',
-
-  clauses:'The following clause analysis was extracted. Reformat into ONLY a scorecard and clause cards, nothing else.\n\n## Clause Scorecard\n| Standard | Favorable | Unfavorable | Unusual |\n|----------|-----------|-------------|---------|\n| 0 | 0 | 0 | 0 |\n\n---\n\n### [Clause Name] — STANDARD\nPlain language explanation.\nConcerns: none\n\n---\n\n### [Clause Name] — UNFAVORABLE\nPlain language explanation.\nConcern: specific concern\n\nUse only: STANDARD, FAVORABLE, UNFAVORABLE, UNUSUAL after the dash.\n\nHere is the analysis to reformat:',
-
-  definitions:'The following was extracted from a legal document. Reformat into ONLY these sections, nothing else:\n\n## Defined Terms\n| Term | Definition | Concerns |\n|------|-----------|----------|\n| term | definition | none or issue |\n\n## Undefined but Important Terms\n- term used but never defined\n\n## Ambiguous Language\n**"phrase"** — found in clause reference\n- Interpretation 1: meaning\n- Interpretation 2: meaning\n- Risk: dispute that could arise\n\n## Inconsistencies\n- inconsistency found\n\nHere is the content to reformat:',
-
-  compliance:'The following compliance review was extracted. Reformat into ONLY these sections, nothing else:\n\n## Applicable Laws\n| Law or Regulation | Jurisdiction | How It Applies |\n|------------------|-------------|----------------|\n| law name | country | explanation |\n\n## Compliance Gaps\n| Missing Provision | Severity | Recommendation |\n|------------------|---------|----------------|\n| what is missing | High/Medium/Low | what to add |\n\n## Regulatory Red Flags\n- provision conflicting with law\n\n## Jurisdiction\n[Is governing law appropriate?]\n\n## Data Privacy\n- data protection issues\n\nHere is the review to reformat:',
-
-  score:'The following contract scoring analysis was done. Reformat into ONLY this exact structure:\n\n## Contract Score\n\nOverall: [number]/100 — [HIGH RISK / MEDIUM RISK / LOW RISK]\n\n## Dimension Scores\n\n| Dimension | Score | Key Finding |\n|-----------|-------|------------|\n| Commercial | [0-100] | [one finding] |\n| Legal | [0-100] | [one finding] |\n| Operational | [0-100] | [one finding] |\n| Compliance | [0-100] | [one finding] |\n\n## What Drives the Score\n\n### Positives\n- [positive finding]\n- [positive finding]\n- [positive finding]\n\n### Negatives\n- [negative finding]\n- [negative finding]\n- [negative finding]\n\n## Recommendation\n[One paragraph: what to fix and projected score after negotiation]\n\nHere is the scoring analysis to reformat:',
-  negotiate:'The following negotiation analysis was extracted from a legal document. Reformat into ONLY clause cards and a summary. Nothing else.\n\nFor each clause use exactly this format:\n\n### [HIGH] Clause name — Section reference\n**Current language:** \"exact quote from contract\"\n**Why it must change:** one sentence\n**Suggested redline:** \"complete replacement language\"\n**Negotiation note:** one sentence on how to present this\n\n---\n\n### [MEDIUM] Clause name — Section reference\n**Current language:** \"exact quote\"\n**Why it must change:** explanation\n**Suggested redline:** \"replacement language\"\n**Negotiation note:** how to present\n\n---\n\nEnd with:\n\n## Negotiation Summary\nTotal clauses to negotiate: X\nEstimated sessions needed: X\nOpening position: which clause to lead with and why\nWalk-away clause: the one non-negotiable clause\n\nHere is the negotiation analysis to reformat:',
-  obligations:'The following obligations mapping was extracted. Reformat into ONLY these sections, nothing else:\n\n## [Party 1 Name]\n\n### Must Do\n| Obligation | By When | If Breached |\n|-----------|---------|-------------|\n| obligation | deadline | consequence |\n\n### Entitled To\n- right — conditions\n\n### Cannot Do\n- restriction — scope\n\n---\n\n## [Party 2 Name]\n\n### Must Do\n| Obligation | By When | If Breached |\n|-----------|---------|-------------|\n\n### Entitled To\n- right — conditions\n\n### Cannot Do\n- restriction — scope\n\n---\n\n## Imbalances\n- anything one-sided\n\n## Enforcement\n[remedies for breach]\n\nHere is the mapping to reformat:'
-};
 
 var PROMPTS={
   summary:'Extract from this legal document: 1) document type, 2) all parties with name/role/jurisdiction, 3) core purpose in 2-3 sentences, 4) key commercial terms (duration, payment, rates, insurance, governing law), 5) main obligations per party, 6) overall assessment.',
@@ -302,7 +287,6 @@ Walk-away clause: the one clause that is absolutely non-negotiable and why`,
 var LABELS={summary:'Plain Language Summary',risks:'Risk & Red Flag Analysis',dates:'Key Dates & Deadlines',clauses:'Clause-Level Analysis',definitions:'Definitions & Cross-References',compliance:'Compliance Review',obligations:'Rights & Obligations Map',custom:'Custom Analysis',negotiate:'Negotiation Suggestions',score:'Contract Score'};
 var ICONS={summary:'📋',risks:'🚨',dates:'📅',clauses:'🔍',definitions:'📖',compliance:'✅',obligations:'⚡',custom:'💬',negotiate:'✍',score:'🎯'};
 var LANG_SUFFIX={en:'',ar:'\n\nIMPORTANT: Respond entirely in Arabic.',fr:'\n\nIMPORTANT: Respond entirely in French.'};
-var TWO_CALL=['summary','dates','clauses','definitions','compliance','obligations','negotiate','score'];
 
 function onDragOver(e){e.preventDefault();document.getElementById('dropZone').classList.add('drag');}
 function onDragLeave(){document.getElementById('dropZone').classList.remove('drag');}
@@ -355,6 +339,8 @@ async function callAPI(prompt,includeDoc){
   var body={
     _fileType:fileExt,
     _fileData:(includeDoc&&fileB64&&isOffice)?fileB64:undefined,
+    _mode:includeDoc?mode:'',
+    _obligations2Prompt:(includeDoc&&mode==='obligations')?PROMPTS.obligations2+LANG_SUFFIX[currentLang]:'',
     model:'claude-sonnet-4-20250514',
     max_tokens:8096,
     system:'You are Lexis, an elite AI legal counsel with 15+ years of experience in commercial contract law, corporate finance, and regulatory compliance. You combine the analytical depth of a senior partner at a top-tier law firm with the commercial judgment of a seasoned CFO. Your expertise spans contract drafting and disputes, cross-border commercial agreements, UAE and GCC commercial law, corporate governance, financial risk, and regulatory compliance across multiple jurisdictions. Your users are CFOs, business owners, and legal teams reviewing contracts before signing or during due diligence. Some have deep legal expertise, others have none. You adapt your language accordingly — precise and technical when needed, plain and actionable when not. When reviewing contracts you give equal weight to four dimensions: commercial risk (financial exposure, payment terms, liability), legal risk (enforceability, jurisdiction, dispute resolution), operational risk (obligations, KPIs, termination), and compliance risk (regulatory requirements, data protection, tax). You never prioritize one over the others. You are direct, thorough, and honest. You flag what is dangerous, what is unusual, what is missing, and what should be negotiated. You think like the person sitting across the table from the other party\'s lawyer — protecting your client\'s interests while maintaining professional objectivity. Always follow the exact format and structure specified in each request.',
@@ -370,22 +356,6 @@ async function callAPI(prompt,includeDoc){
 }
 
 // Dedicated formatter call - clean, no document, no history
-async function callFormat(prompt){
-  var body={
-    model:'claude-sonnet-4-20250514',
-    max_tokens:8096,
-    system:'You are a document formatter. Reformat the provided content into the exact template shown. Do not add any content not present in the source. Do not add explanations or commentary.',
-    messages:[{role:'user',content:[{type:'text',text:prompt}]}]
-  };
-  var res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  var data=await res.json();
-  if(!res.ok)throw new Error(data&&data.error?data.error.message:'Error '+res.status);
-  var text=(data.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('\n');
-  if(!text)throw new Error('Empty response on format call. Please try again.');
-  var tokens=((data.usage||{}).input_tokens||0)+((data.usage||{}).output_tokens||0);
-  return{text:text,tokens:tokens};
-}
-
 async function analyze(){
   if(!fileB64){showError('No Document','Please upload a document first.');return;}
   var basePrompt=mode==='custom'?document.getElementById('customQ').value.trim():PROMPTS[mode];
@@ -399,23 +369,7 @@ async function analyze(){
   var t0=Date.now();
   try{
     var text,tokens;
-    if(mode==='obligations'){
-      var r1a=await callAPI(prompt);
-      var p2=PROMPTS.obligations2+LANG_SUFFIX[currentLang];
-      var r1b=await callAPI(p2);
-      var combined='PARTY 1 (CLIENT):\n'+r1a.text.substring(0,2000)+'\n\nPARTY 2 (SERVICE PROVIDER):\n'+r1b.text.substring(0,2000);
-      var r2=await callFormat(FMT[mode]+'\n\n'+combined);
-      text=r2.text;tokens=r1a.tokens+r1b.tokens+r2.tokens;
-    } else if(TWO_CALL.indexOf(mode)>-1){
-      var r1=await callAPI(prompt);
-      var templateLen=FMT[mode]?FMT[mode].length:0;
-      var maxChars=Math.max(2000,Math.min(8000,(15000-Math.floor(templateLen/4))*4));
-      var trimmed=r1.text.length>maxChars?r1.text.substring(0,maxChars)+'\n[...truncated for length]':r1.text;
-      var r2=await callFormat(FMT[mode]+'\n\n'+trimmed);
-      text=r2.text;tokens=r1.tokens+r2.tokens;
-    } else {
-      var r=await callAPI(prompt);text=r.text;tokens=r.tokens;
-    }
+    var r=await callAPI(prompt);text=r.text;tokens=r.tokens;
     lastAnalysisText=text;
     chatHistory=[
       {role:'user',content:[
@@ -449,23 +403,7 @@ async function runFullAnalysis(){
     try{
       var p=PROMPTS[m]+LANG_SUFFIX[currentLang];
       var pm=mode;mode=m;
-      if(m==='obligations'){
-        var ra=await callAPI(p);
-        var p2b=PROMPTS.obligations2+LANG_SUFFIX[currentLang];
-        var rb=await callAPI(p2b);
-        var comb='PARTY 1 (CLIENT):\n'+ra.text.substring(0,2000)+'\n\nPARTY 2 (SERVICE PROVIDER):\n'+rb.text.substring(0,2000);
-        var r2=await callFormat(FMT[m]+'\n\n'+comb);
-        results[m]=r2.text;
-      } else if(TWO_CALL.indexOf(m)>-1){
-        var r1=await callAPI(p);
-        var tplLen=FMT[m]?FMT[m].length:0;
-          var maxCh=Math.max(2000,Math.min(8000,(15000-Math.floor(tplLen/4))*4));
-          var tr=r1.text.length>maxCh?r1.text.substring(0,maxCh)+'\n[...truncated for length]':r1.text;
-        var r2=await callFormat(FMT[m]+'\n\n'+tr);
-        results[m]=r2.text;
-      } else {
-        var r=await callAPI(p);results[m]=r.text;
-      }
+      var r=await callAPI(p);results[m]=r.text;
       mode=pm;
     } catch(err){results[m]='Error: '+err.message;}
   }
