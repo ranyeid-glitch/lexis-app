@@ -1108,32 +1108,32 @@ async function runComparison(){
 }
 
 function exportExecPDF(){
+  // Use same proven pattern as exportSingle — build fresh div, never clone DOM
   var panel=document.getElementById('panel-analysis');
   if(!panel)return;
 
-  // Find the inline-styled exec div — first child div inside panel
+  // Get the exec content HTML string directly from the stored variable
   var execDiv=panel.querySelector('div[style*="border:1px solid #ddd8c8"]');
   if(!execDiv){exportSingle();return;}
 
-  // Clone it and hide the export button inside footer
-  var clone=execDiv.cloneNode(true);
-  var btns=clone.querySelectorAll('button');
-  btns.forEach(function(b){b.style.display='none';});
+  // Build a fresh container — same as exportSingle does
+  var w=document.createElement('div');
+  w.style.cssText='font-family:Georgia,serif;font-size:12px;line-height:1.7;color:#1a1a2e;padding:0;background:#fff;width:100%;';
 
-  // Append to body temporarily so css resolves correctly
-  clone.style.cssText='width:680px;font-family:Georgia,serif;font-size:13px;color:#1a1a2e;background:#fff;';
-  document.body.appendChild(clone);
+  // Copy innerHTML but strip buttons
+  var tmp=document.createElement('div');
+  tmp.innerHTML=execDiv.outerHTML;
+  var btns=tmp.querySelectorAll('button');
+  btns.forEach(function(b){b.parentNode.removeChild(b);});
+  w.innerHTML=tmp.innerHTML;
 
   var opt={
     margin:[12,12,12,12],
     filename:'Lexis-ExecutiveSummary-'+fileName.replace(/\.[^.]+$/,'')+'.pdf',
-    html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false},
+    html2canvas:{scale:1.5,useCORS:true},
     jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
   };
-
-  html2pdf().set(opt).from(clone).save().then(function(){
-    document.body.removeChild(clone);
-  });
+  html2pdf().set(opt).from(w).save();
 }
 
 function exportComparisonPDF(){
