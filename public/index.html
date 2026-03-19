@@ -465,7 +465,7 @@ function renderResult(panelId,title,text,elapsed,tokens){
     riskBar='<div class="riskScore"><div><div class="riskLabel '+cls+'">● OVERALL: '+s.level+' RISK</div><div class="riskCount">'+s.h+' HIGH · '+s.m+' MEDIUM · '+s.l+' LOW</div></div><div class="riskMeter" style="flex:1"><div class="riskFill '+cls+'" style="width:0%" id="riskBar"></div></div></div>';
     setTimeout(function(){var b=document.getElementById('riskBar');if(b)b.style.width=pct+'%';},100);
   }
-  panel.innerHTML='<div class="resultHdr"><div><div class="resultTitle">'+title+'</div><div class="resultFile">'+escHtml(fileName)+'</div></div><div><div class="resultMeta">'+elapsed+'s · '+tokens.toLocaleString()+' tokens</div><div class="resultActions"><button class="actBtn gold" onclick="exportSingle()">⬇ PDF</button><button class="actBtn" onclick="copyText()">Copy</button></div></div></div>'+riskBar+'<div class="mdBody">'+renderMd(text)+'</div>';
+  panel.innerHTML='<div class="resultHdr"><div><div class="resultTitle">'+title+'</div><div class="resultFile">'+escHtml(fileName)+'</div></div><div><div class="resultMeta">'+elapsed+'s · '+tokens.toLocaleString()+' tokens</div><div class="resultActions"><button class="actBtn gold" onclick="exportSingle()">⬇ PDF</button><button class="actBtn" id="translateBtn" onclick="translateResult()">🌐 Translate</button><button class="actBtn" onclick="copyText()">Copy</button></div></div></div>'+riskBar+'<div class="mdBody">'+renderMd(text)+'</div>';
 }
 
 function showLoading(panelId,label){
@@ -503,6 +503,38 @@ function copyFull(){
   if(window._fr){
     var all=Object.keys(window._fr).map(function(k){return'=== '+LABELS[k]+' ===\n\n'+window._fr[k];}).join('\n\n\n');
     navigator.clipboard.writeText(all).then(function(){alert('Copied to clipboard');});
+  }
+}
+
+async function translateResult(){
+  if(!lastAnalysisText){alert('No analysis to translate. Run an analysis first.');return;}
+  if(currentLang==='en'){alert('Already in English. Select AR or FR first.');return;}
+  var langName=currentLang==='ar'?'Arabic':'French';
+  var btn=document.getElementById('translateBtn');
+  if(btn){btn.textContent='Translating…';btn.disabled=true;}
+  try{
+    var prompt='Translate the following legal analysis into '+langName+'. Preserve all formatting including tables, headers, bullet points, and markdown structure exactly. Only translate the text content, do not change the structure.\n\n'+lastAnalysisText;
+    var res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:8096,
+        system:'You are a professional legal translator. Translate accurately while preserving all markdown formatting.',
+        messages:[{role:'user',content:[{type:'text',text:prompt}]}]
+      })
+    });
+    var data=await res.json();
+    if(!res.ok)throw new Error(data&&data.error?data.error.message:'Error');
+    var translated=(data.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('\n');
+    if(!translated)throw new Error('Empty translation response.');
+    lastAnalysisText=translated;
+    // Re-render with translated text
+    var panel=document.getElementById('panel-analysis');
+    var mdBody=panel.querySelector('.mdBody');
+    if(mdBody)mdBody.innerHTML=renderMd(translated);
+  } catch(err){
+    alert('Translation failed: '+err.message);
+  } finally{
+    if(btn){btn.textContent='🌐 Translate';btn.disabled=false;}
   }
 }
 
