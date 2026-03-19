@@ -583,10 +583,16 @@ function buildExecSummary(text){
 
     // Build risks HTML
     var highHtml=highRisks.map(function(r){
-      return '<div class="execRisk"><div class="execRiskBar" style="background:var(--red)"></div><div><div class="execRiskTitle" style="color:var(--red)">'+escHtml(r.title)+'</div><div class="execRiskDesc">'+escHtml(r.desc)+'</div></div></div>';
+      return '<div style="display:flex;gap:10px;margin-bottom:10px;">'
+        +'<div style="width:3px;flex-shrink:0;border-radius:2px;background:#b04040;"></div>'
+        +'<div><div style="font-size:13px;font-weight:500;margin-bottom:2px;color:#b04040;">'+escHtml(r.title)+'</div>'
+        +'<div style="font-size:11px;color:#8a8070;line-height:1.5;">'+escHtml(r.desc)+'</div></div></div>';
     }).join('');
     var medHtml=medRisks.map(function(r){
-      return '<div class="execRisk"><div class="execRiskBar" style="background:#d4820a"></div><div><div class="execRiskTitle" style="color:#d4820a">'+escHtml(r.title)+'</div><div class="execRiskDesc">'+escHtml(r.desc)+'</div></div></div>';
+      return '<div style="display:flex;gap:10px;margin-bottom:10px;">'
+        +'<div style="width:3px;flex-shrink:0;border-radius:2px;background:#d4820a;"></div>'
+        +'<div><div style="font-size:13px;font-weight:500;margin-bottom:2px;color:#d4820a;">'+escHtml(r.title)+'</div>'
+        +'<div style="font-size:11px;color:#8a8070;line-height:1.5;">'+escHtml(r.desc)+'</div></div></div>';
     }).join('');
 
     // Parse before signing
@@ -606,46 +612,77 @@ function buildExecSummary(text){
 
     var date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
 
-    var html='<div class="execWrap">'
-      +'<div class="execHeader">'
-      +'<div><div class="execTitle">Lexis Intelligence</div><div class="execSub">Executive Summary</div></div>'
-      +'<div class="execMeta">'+date+'<br>CONFIDENTIAL</div>'
+    var html=''
+      +'<div style="border:1px solid #ddd8c8;overflow:hidden;font-family:Georgia,serif;color:#1a1a2e;background:#fff;">'
+
+      // Dark header
+      +'<div style="background:#1a1a2e;padding:16px 24px;display:flex;justify-content:space-between;align-items:flex-end;">'
+      +'<div>'
+      +'<div style="font-family:Georgia,serif;font-size:18px;color:#fff;margin-bottom:4px;">Lexis Intelligence</div>'
+      +'<div style="font-family:monospace;font-size:9px;color:#c9a84c;letter-spacing:.14em;text-transform:uppercase;">EXECUTIVE SUMMARY</div>'
       +'</div>'
-      +'<div class="execDocBar">'
-      +'<div><div class="execDocTitle">'+escHtml(fileName)+'</div><div class="execDocSub">Prepared for C-Level review</div></div>'
-      +(score?'<div class="execScorePill" style="background:'+scoreColor+'">'+score+'/100 '+scoreLabel+'</div>':'')
-      +'</div>'
-      +'<div class="execBody">'
-
-      +'<div class="execSection"><div class="execSecLabel">01 — What This Contract Does</div><div class="execSecLine"></div>'
-      +'<div class="execText">'+escHtml((sections.what||'').trim())+'</div></div>'
-
-      +(expAmt?'<div class="execSection"><div class="execSecLabel">02 — Financial Exposure</div><div class="execSecLine"></div>'
-      +'<div class="execExposureBox"><div class="execExposureAmt">'+escHtml(expAmt.replace(/\*\*/g,''))+'</div>'
-      +(expDesc?'<div style="font-size:12px;color:var(--muted)">'+escHtml(expDesc)+'</div>':'')+'</div></div>':'')
-
-      +'<div class="execSection"><div class="execSecLabel">03 — Risks Requiring Board Attention</div><div class="execSecLine"></div>'
-      +(highRisks.length?'<div style="font-family:monospace;font-size:9px;letter-spacing:.1em;color:var(--red);margin-bottom:8px;text-transform:uppercase">High Risks</div>'+highHtml:'')
-      +(medRisks.length?'<div style="font-family:monospace;font-size:9px;letter-spacing:.1em;color:#d4820a;margin:12px 0 8px;text-transform:uppercase">Medium Risks (Top 2)</div>'+medHtml:'')
+      +'<div style="font-family:monospace;font-size:9px;color:#888;text-align:right;line-height:1.8;">'+date+'<br>CONFIDENTIAL</div>'
       +'</div>'
 
-      +(actionsHtml?'<div class="execSection"><div class="execSecLabel">04 — Before Signing</div><div class="execSecLine"></div>'
-      +'<ol style="padding-left:18px;margin:0">'+actionsHtml+'</ol>'
-      +(projectedScore?'<div style="margin-top:8px;font-size:12px;color:var(--muted)">Projected score after negotiation: <strong>'+escHtml(projectedScore)+'</strong></div>':'')
+      // Doc bar
+      +'<div style="background:#f2ede0;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ddd8c8;">'
+      +'<div>'
+      +'<div style="font-family:Georgia,serif;font-size:14px;color:#1a1a2e;">'+escHtml(fileName)+'</div>'
+      +'<div style="font-size:11px;color:#8a8070;margin-top:2px;">Prepared for C-Level review</div>'
+      +'</div>'
+      +(score?'<div style="font-family:monospace;font-size:10px;font-weight:500;padding:5px 12px;color:#fff;background:'+scoreColor+';">'+score+'/100 '+scoreLabel+'</div>':'')
+      +'</div>'
+
+      // Body
+      +'<div style="padding:20px 24px;">'
+
+      // Section 01
+      +'<div style="margin-bottom:20px;">'
+      +'<div style="font-family:monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#c9a84c;margin-bottom:6px;">01 — WHAT THIS CONTRACT DOES</div>'
+      +'<div style="height:1px;background:#ddd8c8;margin-bottom:12px;"></div>'
+      +'<div style="font-size:13px;line-height:1.8;color:#1a1a2e;">'+escHtml((sections.what||'').trim())+'</div>'
+      +'</div>'
+
+      // Section 02 - Financial Exposure
+      +(expAmt?'<div style="margin-bottom:20px;">'
+      +'<div style="font-family:monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#c9a84c;margin-bottom:6px;">02 — FINANCIAL EXPOSURE</div>'
+      +'<div style="height:1px;background:#ddd8c8;margin-bottom:12px;"></div>'
+      +'<div style="background:#fdf0f0;border:1px solid #e8c0c0;padding:12px 16px;margin-bottom:8px;">'
+      +'<div style="font-size:15px;font-weight:500;color:#b04040;margin-bottom:4px;">'+escHtml(expAmt.replace(/\*\*/g,''))+'</div>'
+      +(expDesc?'<div style="font-size:12px;color:#8a8070;">'+escHtml(expDesc)+'</div>':'')
+      +'</div></div>':'')
+
+      // Section 03 - Risks
+      +'<div style="margin-bottom:20px;">'
+      +'<div style="font-family:monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#c9a84c;margin-bottom:6px;">03 — RISKS REQUIRING BOARD ATTENTION</div>'
+      +'<div style="height:1px;background:#ddd8c8;margin-bottom:12px;"></div>'
+      +(highRisks.length?'<div style="font-family:monospace;font-size:9px;letter-spacing:.1em;color:#b04040;margin-bottom:8px;text-transform:uppercase;">HIGH RISKS</div>'+highHtml:'')
+      +(medRisks.length?'<div style="font-family:monospace;font-size:9px;letter-spacing:.1em;color:#d4820a;margin:12px 0 8px;text-transform:uppercase;">MEDIUM RISKS (Top 2)</div>'+medHtml:'')
+      +'</div>'
+
+      // Section 04 - Before Signing
+      +(actionsHtml?'<div style="margin-bottom:20px;">'
+      +'<div style="font-family:monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#c9a84c;margin-bottom:6px;">04 — BEFORE SIGNING</div>'
+      +'<div style="height:1px;background:#ddd8c8;margin-bottom:12px;"></div>'
+      +'<ol style="padding-left:18px;margin:0;">'+actionsHtml+'</ol>'
+      +(projectedScore?'<div style="margin-top:8px;font-size:12px;color:#8a8070;">Projected score after negotiation: <strong>'+escHtml(projectedScore)+'</strong></div>':'')
       +'</div>':'')
 
-      +(verdict?'<div class="execVerdictBox"><div style="font-family:monospace;font-size:9px;letter-spacing:.1em;color:var(--amber);text-transform:uppercase;margin-bottom:6px">Verdict</div>'
-      +'<div style="font-size:13px;font-weight:500;color:'+verdictColor+'">'+escHtml(verdict)+'</div></div>':'')
+      // Verdict
+      +(verdict?'<div style="padding:14px 18px;border:1px solid #c9a84c;background:#fdf6e3;margin-top:8px;">'
+      +'<div style="font-family:monospace;font-size:9px;letter-spacing:.1em;color:#92600a;text-transform:uppercase;margin-bottom:6px;">VERDICT</div>'
+      +'<div style="font-size:13px;font-weight:500;color:'+verdictColor+';">'+escHtml(verdict)+'</div>'
+      +'</div>':'')
 
       +'</div>'
-      +'<div class="execFooter">'
-      +'<div class="execFootNote">Prepared by Lexis Intelligence · For informational purposes only · Not a substitute for legal advice</div>'
-      +'<button class="actBtn gold" onclick="exportExecPDF()">⬇ Export PDF</button>'
-      +'</div>'
+
+      // Footer
+      +'<div style="background:#f2ede0;padding:10px 24px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #ddd8c8;">'
+      +'<div style="font-family:monospace;font-size:9px;color:#8a8070;">Prepared by Lexis Intelligence · For informational purposes only · Not a substitute for legal advice</div>'
+      +'<button class="actBtn gold" onclick="exportExecPDF()" style="font-size:11px;">⬇ Export PDF</button>'
       +'</div>'
 
-      ;
-
+      +'</div>'
     return html;
   }catch(e){
     console.error('buildExecSummary error:',e);
@@ -1074,25 +1111,29 @@ function exportExecPDF(){
   var panel=document.getElementById('panel-analysis');
   if(!panel)return;
 
-  var execWrap=panel.querySelector('.execWrap');
-  if(!execWrap){exportSingle();return;}
+  // Find the inline-styled exec div — first child div inside panel
+  var execDiv=panel.querySelector('div[style*="border:1px solid #ddd8c8"]');
+  if(!execDiv){exportSingle();return;}
 
-  var clone=execWrap.cloneNode(true);
+  // Clone it and hide the export button inside footer
+  var clone=execDiv.cloneNode(true);
+  var btns=clone.querySelectorAll('button');
+  btns.forEach(function(b){b.style.display='none';});
 
-  // Hide footer button
-  var footer=clone.querySelector('.execFooter');
-  if(footer)footer.style.display='none';
-
-  // Let html2pdf control sizing — no fixed width
-  clone.style.cssText='background:#fff;font-family:Georgia,serif;font-size:12px;line-height:1.6;color:#1a1a2e;';
+  // Append to body temporarily so css resolves correctly
+  clone.style.cssText='width:680px;font-family:Georgia,serif;font-size:13px;color:#1a1a2e;background:#fff;';
+  document.body.appendChild(clone);
 
   var opt={
-    margin:[15,15,15,15],
+    margin:[12,12,12,12],
     filename:'Lexis-ExecutiveSummary-'+fileName.replace(/\.[^.]+$/,'')+'.pdf',
-    html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,windowWidth:800},
+    html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false},
     jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
   };
-  html2pdf().set(opt).from(clone).save();
+
+  html2pdf().set(opt).from(clone).save().then(function(){
+    document.body.removeChild(clone);
+  });
 }
 
 function exportComparisonPDF(){
