@@ -1020,9 +1020,10 @@ function exportSingle(){
   var w=document.createElement('div');
   w.style.cssText='font-family:Georgia,serif;font-size:12px;line-height:1.7;color:#1a1a2e;padding:10px;background:#fff';
   w.innerHTML=
-    '<h1 style="font-size:18px;border-bottom:2px solid #c9a84c;padding-bottom:8px;margin-bottom:12px">Lexis Intelligence — '+LABELS[mode]+'</h1>'
-    +'<p style="font-size:10px;color:#888;margin-bottom:16px">'+escHtml(fileName)+' · '+new Date().toLocaleDateString()+'</p>'
-    +clone.innerHTML;
+    getBrandedHeader(LABELS[mode])
+    +'<p style="font-size:10px;color:#888;margin-bottom:16px">'+escHtml(fileName)+'</p>'
+    +clone.innerHTML
+    +getBrandedFooter();
   html2pdf().set(opt).from(w).save();
 }
 
@@ -1451,9 +1452,168 @@ function injectMyClauseButtons(panel){
   });
 }
 
+// ── BRANDING SETTINGS ────────────────────────────────────────────────────────
+var BRAND_KEY='lexis_branding';
+
+function loadBranding(){
+  try{return JSON.parse(localStorage.getItem(BRAND_KEY)||'{}');}
+  catch(e){return {};}
+}
+
+function saveBrandingSettings(){
+  var b={
+    company:(document.getElementById('brandCompany').value||'').trim(),
+    tagline:(document.getElementById('brandTagline').value||'').trim(),
+    confLabel:document.getElementById('brandConfLabel').value||'CONFIDENTIAL',
+    footer:(document.getElementById('brandFooter').value||'').trim()
+  };
+  localStorage.setItem(BRAND_KEY,JSON.stringify(b));
+  hideBrandingSettings();
+  // Show confirmation
+  var btn=document.querySelector('[onclick="showBrandingSettings()"]');
+  if(btn){btn.textContent='⚙ Branding ✓';setTimeout(function(){btn.textContent='⚙ Branding';},2000);}
+}
+
+function clearBrandingSettings(){
+  if(!confirm('Clear all branding settings?'))return;
+  localStorage.removeItem(BRAND_KEY);
+  document.getElementById('brandCompany').value='';
+  document.getElementById('brandTagline').value='';
+  document.getElementById('brandConfLabel').value='CONFIDENTIAL';
+  document.getElementById('brandFooter').value='';
+  updateBrandPreview();
+}
+
+function showBrandingSettings(){
+  var b=loadBranding();
+  document.getElementById('brandCompany').value=b.company||'';
+  document.getElementById('brandTagline').value=b.tagline||'';
+  document.getElementById('brandConfLabel').value=b.confLabel||'CONFIDENTIAL';
+  document.getElementById('brandFooter').value=b.footer||'';
+  document.getElementById('brandingModal').style.display='flex';
+  document.getElementById('prevDate').textContent=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  updateBrandPreview();
+
+  // Live preview on input
+  ['brandCompany','brandTagline','brandConfLabel'].forEach(function(id){
+    document.getElementById(id).oninput=updateBrandPreview;
+    document.getElementById(id).onchange=updateBrandPreview;
+  });
+}
+
+function hideBrandingSettings(){
+  document.getElementById('brandingModal').style.display='none';
+}
+
+function updateBrandPreview(){
+  var company=(document.getElementById('brandCompany').value||'').trim();
+  var tagline=(document.getElementById('brandTagline').value||'').trim();
+  var confLabel=document.getElementById('brandConfLabel').value||'CONFIDENTIAL';
+  document.getElementById('prevCompany').textContent=company||'Lexis Intelligence';
+  document.getElementById('prevTagline').textContent=tagline?tagline+' · POWERED BY LEXIS INTELLIGENCE':'EXECUTIVE LEGAL ANALYSIS';
+  document.getElementById('prevConf').textContent=confLabel;
+}
+
+function getBrandedHeader(title){
+  var b=loadBranding();
+  var company=b.company||'Lexis Intelligence';
+  var tagline=b.tagline?b.tagline+' — Powered by Lexis Intelligence':'';
+  var confLabel=b.confLabel||'CONFIDENTIAL';
+  var date=new Date().toLocaleDateString();
+  var h1=company+(tagline?' — '+tagline:'');
+  var h1Company=b.company?('<strong>'+escHtml(company)+'</strong> · Lexis Intelligence'):escHtml(company);
+  return '<div style="background:#1a1a2e;padding:14px 20px;display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:0;">'
+    +'<div>'
+    +'<div style="font-family:Georgia,serif;font-size:16px;color:#fff;margin-bottom:3px;">'+escHtml(company)+'</div>'
+    +'<div style="font-family:monospace;font-size:8px;color:#c9a84c;letter-spacing:.12em;text-transform:uppercase;">'
+    +(tagline?escHtml(tagline)+' · ':'')+'LEXIS INTELLIGENCE</div>'
+    +'</div>'
+    +'<div style="text-align:right;font-family:monospace;font-size:8px;color:#888;line-height:1.8;">'
+    +escHtml(date)+'<br>'+escHtml(confLabel)
+    +'</div>'
+    +'</div>'
+    +'<div style="padding:8px 20px;background:#f2ede0;font-family:Georgia,serif;font-size:13px;font-weight:500;border-bottom:1px solid #ddd8c8;margin-bottom:16px;">'
+    +'Lexis Intelligence — '+escHtml(title)
+    +'</div>';
+}
+
+function getBrandedFooter(){
+  var b=loadBranding();
+  var footer=b.footer||(b.company?'Prepared by '+b.company+' using Lexis Intelligence · For informational purposes only · Not legal advice':'Prepared by Lexis Intelligence · For informational purposes only · Not legal advice');
+  return '<div style="margin-top:20px;padding-top:12px;border-top:1px solid #ddd8c8;font-family:monospace;font-size:9px;color:#8a8070;">'+escHtml(footer)+'</div>';
+}
+
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 var esc=escHtml;
 
 </script>
+<!-- Branding Settings Modal -->
+<div id="brandingModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:2000;align-items:center;justify-content:center;">
+  <div style="background:var(--bg);border:1px solid var(--border);padding:28px;width:580px;max-width:90vw;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-family:Georgia,serif;font-size:16px;font-weight:500">Branding & Watermark</div>
+      <button class="actBtn" onclick="hideBrandingSettings()">✕ Close</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Customize your PDF exports. Leave fields empty to use default Lexis Intelligence branding.</div>
+
+    <!-- Company Name -->
+    <div style="margin-bottom:14px">
+      <div class="sLabel" style="margin-bottom:6px">Company Name</div>
+      <input id="brandCompany" type="text" placeholder="e.g. Obegi Home LLC"
+        style="width:100%;padding:8px 12px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-family:var(--font-sans)">
+    </div>
+
+    <!-- Tagline -->
+    <div style="margin-bottom:14px">
+      <div class="sLabel" style="margin-bottom:6px">Tagline <span style="color:var(--muted);font-weight:400">(optional)</span></div>
+      <input id="brandTagline" type="text" placeholder="e.g. Legal & Compliance Review"
+        style="width:100%;padding:8px 12px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-family:var(--font-sans)">
+    </div>
+
+    <!-- Confidentiality Label -->
+    <div style="margin-bottom:14px">
+      <div class="sLabel" style="margin-bottom:6px">Confidentiality Label</div>
+      <select id="brandConfLabel"
+        style="width:100%;padding:8px 12px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-family:var(--font-sans)">
+        <option value="CONFIDENTIAL">CONFIDENTIAL</option>
+        <option value="STRICTLY PRIVATE">STRICTLY PRIVATE</option>
+        <option value="INTERNAL USE ONLY">INTERNAL USE ONLY</option>
+        <option value="PRIVILEGED AND CONFIDENTIAL">PRIVILEGED AND CONFIDENTIAL</option>
+      </select>
+    </div>
+
+    <!-- Footer Text -->
+    <div style="margin-bottom:20px">
+      <div class="sLabel" style="margin-bottom:6px">PDF Footer Text <span style="color:var(--muted);font-weight:400">(optional)</span></div>
+      <input id="brandFooter" type="text" placeholder="e.g. Prepared by [Company] · Not legal advice"
+        style="width:100%;padding:8px 12px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-family:var(--font-sans)">
+    </div>
+
+    <!-- Preview -->
+    <div style="margin-bottom:20px">
+      <div class="sLabel" style="margin-bottom:8px">PDF Header Preview</div>
+      <div id="brandPreview" style="background:#1a1a2e;padding:14px 20px;display:flex;justify-content:space-between;align-items:flex-end;">
+        <div>
+          <div id="prevCompany" style="font-family:Georgia,serif;font-size:15px;color:#fff;margin-bottom:3px;">Lexis Intelligence</div>
+          <div id="prevTagline" style="font-family:monospace;font-size:8px;color:#c9a84c;letter-spacing:.12em;text-transform:uppercase;"></div>
+        </div>
+        <div style="text-align:right;font-family:monospace;font-size:8px;color:#888;line-height:1.8;">
+          <div id="prevDate"></div>
+          <div id="prevConf" style="color:#888;">CONFIDENTIAL</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div style="display:flex;gap:10px;justify-content:space-between;align-items:center">
+      <button class="actBtn" style="color:#b04040;border-color:#e8c0c0;" onclick="clearBrandingSettings()">Clear All</button>
+      <div style="display:flex;gap:10px;">
+        <button class="actBtn" onclick="hideBrandingSettings()">Cancel</button>
+        <button class="actBtn gold" onclick="saveBrandingSettings()">Save Settings</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
