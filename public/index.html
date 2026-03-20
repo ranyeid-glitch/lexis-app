@@ -1108,27 +1108,31 @@ async function runComparison(){
 }
 
 function exportExecPDF(){
-  // Use same proven pattern as exportSingle — build fresh div, never clone DOM
   var panel=document.getElementById('panel-analysis');
   if(!panel)return;
 
-  // Get the exec content HTML string directly from the stored variable
   var execDiv=panel.querySelector('div[style*="border:1px solid #ddd8c8"]');
   if(!execDiv){exportSingle();return;}
 
-  // Build a fresh container — same as exportSingle does
-  var w=document.createElement('div');
-  w.style.cssText='font-family:Georgia,serif;font-size:12px;line-height:1.7;color:#1a1a2e;padding:0;background:#fff;width:100%;';
+  // Store last analysis text so exportSingle can use it
+  // Use exportSingle directly — it is proven to work for all modes
+  // Just temporarily swap panel content to only the exec card
+  var savedHTML=panel.innerHTML;
 
-  // Copy innerHTML but strip buttons
+  // Strip buttons from exec div
   var tmp=document.createElement('div');
   tmp.innerHTML=execDiv.outerHTML;
-  var btns=tmp.querySelectorAll('button');
-  btns.forEach(function(b){b.parentNode.removeChild(b);});
-  w.innerHTML=tmp.innerHTML;
+  tmp.querySelectorAll('button').forEach(function(b){b.parentNode.removeChild(b);});
+
+  // Build w exactly like exportSingle does
+  var w=document.createElement('div');
+  w.style.cssText='font-family:Georgia,serif;font-size:12px;line-height:1.7;color:#1a1a2e;padding:10px;background:#fff;';
+  w.innerHTML=
+    '<p style="font-size:10px;color:#888;margin-bottom:16px">'+escHtml(fileName)+' · '+new Date().toLocaleDateString()+'</p>'
+    +tmp.innerHTML;
 
   var opt={
-    margin:[12,12,12,12],
+    margin:[15,15],
     filename:'Lexis-ExecutiveSummary-'+fileName.replace(/\.[^.]+$/,'')+'.pdf',
     html2canvas:{scale:1.5,useCORS:true},
     jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
