@@ -1550,32 +1550,32 @@ var esc=escHtml;
 </script>
 <!-- Branding Settings Modal -->
 <div id="brandingModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:2000;align-items:center;justify-content:center;">
-  <div style="background:var(--bg);border:1px solid var(--border);padding:28px;width:580px;max-width:90vw;max-height:90vh;overflow-y:auto;">
+  <div style="background:#faf8f3;border:1px solid #ddd8c8;padding:28px;width:580px;max-width:90vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.3);">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
       <div style="font-family:Georgia,serif;font-size:16px;font-weight:500">Branding & Watermark</div>
       <button class="actBtn" onclick="hideBrandingSettings()">✕ Close</button>
     </div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Customize your PDF exports. Leave fields empty to use default Lexis Intelligence branding.</div>
+    <div style="font-size:12px;color:#8a8070;margin-bottom:20px">Customize your PDF exports. Leave fields empty to use default Lexis Intelligence branding.</div>
 
     <!-- Company Name -->
     <div style="margin-bottom:14px">
       <div class="sLabel" style="margin-bottom:6px">Company Name</div>
       <input id="brandCompany" type="text" placeholder="e.g. Obegi Home LLC"
-        style="width:100%;padding:8px 12px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-family:var(--font-sans)">
+        style="width:100%;padding:8px 12px;border:1px solid #ddd8c8;background:#fff;color:#1a1a2e;font-size:13px;font-family:var(--font-sans)">
     </div>
 
     <!-- Tagline -->
     <div style="margin-bottom:14px">
-      <div class="sLabel" style="margin-bottom:6px">Tagline <span style="color:var(--muted);font-weight:400">(optional)</span></div>
+      <div class="sLabel" style="margin-bottom:6px">Tagline <span style="color:#8a8070;font-weight:400">(optional)</span></div>
       <input id="brandTagline" type="text" placeholder="e.g. Legal & Compliance Review"
-        style="width:100%;padding:8px 12px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-family:var(--font-sans)">
+        style="width:100%;padding:8px 12px;border:1px solid #ddd8c8;background:#fff;color:#1a1a2e;font-size:13px;font-family:var(--font-sans)">
     </div>
 
     <!-- Confidentiality Label -->
     <div style="margin-bottom:14px">
       <div class="sLabel" style="margin-bottom:6px">Confidentiality Label</div>
       <select id="brandConfLabel"
-        style="width:100%;padding:8px 12px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-family:var(--font-sans)">
+        style="width:100%;padding:8px 12px;border:1px solid #ddd8c8;background:#fff;color:#1a1a2e;font-size:13px;font-family:var(--font-sans)">
         <option value="CONFIDENTIAL">CONFIDENTIAL</option>
         <option value="STRICTLY PRIVATE">STRICTLY PRIVATE</option>
         <option value="INTERNAL USE ONLY">INTERNAL USE ONLY</option>
@@ -1585,9 +1585,9 @@ var esc=escHtml;
 
     <!-- Footer Text -->
     <div style="margin-bottom:20px">
-      <div class="sLabel" style="margin-bottom:6px">PDF Footer Text <span style="color:var(--muted);font-weight:400">(optional)</span></div>
+      <div class="sLabel" style="margin-bottom:6px">PDF Footer Text <span style="color:#8a8070;font-weight:400">(optional)</span></div>
       <input id="brandFooter" type="text" placeholder="e.g. Prepared by [Company] · Not legal advice"
-        style="width:100%;padding:8px 12px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-family:var(--font-sans)">
+        style="width:100%;padding:8px 12px;border:1px solid #ddd8c8;background:#fff;color:#1a1a2e;font-size:13px;font-family:var(--font-sans)">
     </div>
 
     <!-- Preview -->
